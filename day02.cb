@@ -1,0 +1,36 @@
+// Python regex library
+from native reference re;
+
+class Bag()
+{
+    function __init__(line)
+    {
+        reds   = re.findall("(\\d+) red",   line);
+        greens = re.findall("(\\d+) green", line);
+        blues  = re.findall("(\\d+) blue",  line);
+        self.r = max(int(r) for r in reds);
+        self.g = max(int(g) for g in greens);
+        self.b = max(int(b) for b in blues);
+    }
+
+    function power()
+    {
+        return self.r * self.g * self.b;
+    }
+
+    function possible()
+    {
+        return self.r <= 12 and self.g <= 13 and self.b <= 14;
+    }
+}
+
+class Main()
+{
+    function Main()
+    {
+        with open("input02.txt", "r") as fp:
+            bags = [Bag(line) for line in fp];
+        print(sum(i + 1 for i, bag in enumerate(bags) if bag.possible()));
+        print(sum(bag.power() for bag in bags));
+    }
+}
