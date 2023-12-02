@@ -11,3 +11,15 @@ My Python solution approaches this problem with regular expressions and a dictio
 **Bash**: shell utilities are greater than the sum of their parts.
 
 **Syntax Highlight**: `|` (pipes the output of one command to the input of another)
+
+Day 02: [https://github.com/Ceebox/cbLang](CBLang)
+--------------------------------------------------
+This language is really just a thin layer of paint over Python. There are a lot of constructs within the language that I don't really get the purpose of. Each statement must end with a semicolon, and the program won't compile if they're omitted; but multiple semicolon-separated statements on the same line get mangled when the program is transpiled to Python. (It seems the transformation goes `a; b; c;` to `a\n b; c;` to `a\n\tb; c;`.) Curly braces are used to delimit blocks, but the braces *must* be placed on their own lines; the line containing the `{` gets completely removed during the transpiling process. (Skimming through the source code, it looks like some code is transpiled by directly calling `str.replace`, rather than tokenisation.)
+
+The language's one saving grace is that it has all of Python's built-in functions available to it (since function names and list comprehension syntax are apparently untouched by the transpilation process). Without this feature, I don't think I would have had the patience for this language.
+
+You might notice that the program file uses `crlf` (DOS-style) newline characters. This program is one of the very few I've written from a Windows OS. CBLang is only tested on Windows, but I'm sure it wouldn't be hard at all to run the `ff=unix` command from within Vim.
+
+**CBLang**: what's the opposite of syntax sugar?
+
+**Syntax Highlight**: `from native reference` (this specific text gets find/replace'd into `import` during transpilation)
