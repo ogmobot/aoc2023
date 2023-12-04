@@ -23,3 +23,15 @@ You might notice that the program file uses `crlf` (DOS-style) newline character
 **CBLang**: what's the opposite of syntax sugar?
 
 **Syntax Highlight**: `from native reference` (this specific text gets find/replace'd into `import` during transpilation)
+
+Day 03: Smalltalk
+-----------------
+Wow, now I know what they mean when they say Smalltalk is a *purely* object-oriented language. Even conditionals are object oriented: Booleans have `ifTrue:` and `ifFalse:` methods that take blocks of code as parameters, hence you get stuff like `(a > b) ifTrue: [ 'yes' ] ifFalse: [ 'no' ].`. Similarly, loops tend to be the `do:` method called on collections.
+
+I've not solved this problem in a very efficient way, and Smalltalk isn't known for being fast. Still, it was a fun system to mess around with. Ruby certainly took a huge amount of inspiration from it; I think Smalltalk must have been where declaring variables with `| x |` originated.
+
+I used GNU Smalltalk for this, but it's my understanding that most other implementations come with an IDE that's very helpful for inspecting object properties and methods.
+
+**Smalltalk**: every value is an object and every function is a method.
+
+**Syntax Highlight**: `ifTrue:` (a method implemented by the Boolean class)
