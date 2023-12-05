@@ -35,3 +35,15 @@ I used GNU Smalltalk for this, but it's my understanding that most other impleme
 **Smalltalk**: every value is an object and every function is a method.
 
 **Syntax Highlight**: `ifTrue:` (a method implemented by the Boolean class)
+
+Day 04: [Slouch](https://github.com/lukechampine/slouch)
+--------------------------------------------------------
+This is the second custom programming language I've seen specifically built for competitive programming (the first being [Noulith](https://github.com/betaveros/noulith)). Slouch is certainly well-suited to the task, with built-in functions for common processes like converting a string into a list of integers, or carrying out a breadth-first search.
+
+The language is built around pushing data through a series of composed functions (often seen in C++-inspired languages as `x.f().g().h()`, or OCaML-inspired languages as `x |> f |> g |> h`). In conjuction with the growing standard library, this makes writing programs extraordinarily quick. The Slouch REPL evaluates partially-written results in real time, I feature that I found extraordinarily helpful when trying to figure out the names and arguments of different functions.
+
+Some of the function names were not quite what I expected them to be, but they all make sense. For instance, `prepend` instead of `cons`, `same` instead of `intersection`, `fold1` instead of `reduce`. The version of Slouch that I have downloaded lacks a `pow` function, but based on one of the solutions posted by Luke, he has recently added it to the language.
+
+**Slouch**: solves puzzles fast.
+
+**Syntax Highlight**: `dijkstra` (a function which, given a start point, end point, and a function that maps each point to its neighbours [along with their respective distances], carries out Dijkstra's algorithm to find the shortest path between those two points)
