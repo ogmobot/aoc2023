@@ -1,6 +1,3 @@
 =wins lines | map (split ":" | .1 | split "|" | map ints |< same | len)
 wins | map ( replicate _ 2 | product / 2 ) | sum
-
-=tickets wins | len | replicate _ 1
-
-=NB "TODO: figure out an accumulate function to fold 0..n with"
+wins | reverse | fold {prepend (take y x | fold (+) 1) x} [] | sum
