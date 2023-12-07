@@ -57,3 +57,23 @@ The solution I wrote for this puzzle goes wild with the whole functions-as-first
 **Scheme 9 from Empty Space**: it's just LISP, but designed with the Plan 9 OS in mind.
 
 **Syntax Highlight**: `collect` (a library function that splits a list into sub-lists based on when adjacent elements fail a provided predicate)
+
+Day 06: by hand
+---------------
+I'm not sure if I'll get the opportunity to solve one of these puzzles like this again! The input is small, and the problem is made substantially easier by the application of some algebra. Specifically, the solution to each column of input data is the difference between the two roots of a quadratic equation. Using $\Delta = b^{2} - 4ac$, the difference is:
+
+$$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}} = \sqrt{\Delta}$$
+
+... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. so, all I needed to do was compute $\sqrt{\Delta}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
+
+$$n = 2\ceil{\frac{\Delta}{2}} - 1 \textrm{ if $n$ is even}$$
+
+$$n = \ceil{\frac{\Delta - 1}{2}} + \ceil{\frac{\Delta + 1}{2}} - 1 \textrm{ if $n$ is odd}$$
+
+I have a marvellous proof for these two equations, but it won't fit within this section of the README.)
+
+I learned how to compute square roots digit-by-digit for part 2 of this puzzle. Squaring one eight-dight number and then finding the square root of a sixteen-digit one was a doozy. I hope to scan a re-written version of this solution in pen at some point, so it's more legible.
+
+**Solving by hand**: slower than the alternative.
+
+**~~Syntax~~ orthographic highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
