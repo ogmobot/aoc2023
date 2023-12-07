@@ -66,9 +66,9 @@ $$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}}{2a} = \sqrt{\Delta}$
 
 ... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. so, all I needed to do was compute $\sqrt{\Delta}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
 
-$$n = 2\lceil \frac{\Delta}{2} \rceil - 1 \textrm{ if $n$ is even}$$
+$$n = 2\lceil \frac{\sqrt{\Delta}}{2} \rceil - 1 \textrm{ if $b$ is even}$$
 
-$$n = \lceil \frac{\Delta - 1}{2} \rceil + \lceil \frac{\Delta + 1}{2} \rceil - 1 \textrm{ if $n$ is odd}$$
+$$n = \lceil \frac{\sqrt{\Delta} - 1}{2} \rceil + \lceil \frac{\sqrt{\Delta} + 1}{2} \rceil - 1 \textrm{ if $b$ is odd}$$
 
 I have a marvellous proof for these two equations, but it won't fit within this section of the README.)
 
