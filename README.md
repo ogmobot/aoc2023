@@ -62,13 +62,13 @@ Day 06: by hand
 ---------------
 I'm not sure if I'll get the opportunity to solve one of these puzzles like this again! The input is small, and the problem is made substantially easier by the application of some algebra. Specifically, the solution to each column of input data is the difference between the two roots of a quadratic equation. Using $\Delta = b^{2} - 4ac$, the difference is:
 
-$$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}} = \sqrt{\Delta}$$
+$$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}}{2a} = \sqrt{\Delta}$$
 
 ... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. so, all I needed to do was compute $\sqrt{\Delta}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
 
-$$n = 2\ceil{\frac{\Delta}{2}} - 1 \textrm{ if $n$ is even}$$
+$$n = 2\lceil \frac{\Delta}{2} \rceil - 1 \textrm{ if $n$ is even}$$
 
-$$n = \ceil{\frac{\Delta - 1}{2}} + \ceil{\frac{\Delta + 1}{2}} - 1 \textrm{ if $n$ is odd}$$
+$$n = \lceil \frac{\Delta - 1}{2} \rceil + \lceil \frac{\Delta + 1}{2} \rceil - 1 \textrm{ if $n$ is odd}$$
 
 I have a marvellous proof for these two equations, but it won't fit within this section of the README.)
 
