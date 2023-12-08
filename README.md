@@ -77,3 +77,13 @@ I learned how to compute square roots digit-by-digit for part 2 of this puzzle. 
 **Solving by hand**: look at me. I am the computer now.
 
 **~~Syntax~~ orthographic highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
+
+Day 07: [Kona](https://github.com/kevinlawler/kona)
+---------------------------------------------------
+Kona is an open-source implementation of the commercial programming language k (related to Q and the KDB+ system). Like APL and J, it's an array language; and like J, it's moved towards ASCII rather than specialised symbols. Some of the symbols used by Kona are the same (like `+` and `/`), but others are very different (like `@` and `>`). Familiarity with the style of language helped, I think, but this was nevertheless a difficult program to write. I kept expecting to be using J's verb-trains, but k operates quite differently to J in that regard. Instead, I created a tonne of explicit functions that operated on arguments. (Only a single function definition was point-free.) I found this language easier to write programs in than Uiua, but J is still my preferred array language.
+
+To solve this puzzle, I took advantage of the fact that the finding the frequency of each rank provides a set of lists that can be sorted by element-wise comparison; so four-of-a-kind (4 1 0 0 0) beats full house (3 2 0 0 0) beats two-pair (2 2 1 0 0) beats high card (1 1 1 1 1), *et cetera*. Append this list to the original hand to get an entirely sortable list of hands. Jokers don't get counted as normal; instead, they always add to the most frequent card rank.
+
+**Kona**: it's point-free free, and it's free!
+
+**Syntax highlight**: `*` (unary/monadic: get the head of a list; binary/dyadic: multiply)
