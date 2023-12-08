@@ -62,9 +62,9 @@ Day 06: by hand
 ---------------
 I'm not sure if I'll get the opportunity to solve one of these puzzles like this again! The input is small, and the problem is made substantially easier by the application of some algebra. Specifically, the solution to each column of input data is the difference between the two roots of a quadratic equation. Using $\Delta = b^{2} - 4ac$, the difference is:
 
-$$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}}{2a} = \sqrt{\Delta}$$
+$$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}}{2a} = \frac{\sqrt{\Delta}}{a}$$
 
-... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. so, all I needed to do was compute $\sqrt{\Delta}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
+... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. so, all I needed to do was compute $\sqrt{\Delta} = \sqrt{b^{2} - 4c}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
 
 $$n = 2\lceil \frac{\sqrt{\Delta}}{2} \rceil - 1 \textrm{ if $b$ is even}$$
 
@@ -74,6 +74,6 @@ I have a marvellous proof for these two equations, but it won't fit within this 
 
 I learned how to compute square roots digit-by-digit for part 2 of this puzzle. Squaring one eight-dight number and then finding the square root of a sixteen-digit one was a doozy. I hope to scan a re-written version of this solution in pen at some point, so it's more legible.
 
-**Solving by hand**: slower than the alternative.
+**Solving by hand**: look at me. I am the computer now.
 
 **~~Syntax~~ orthographic highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
