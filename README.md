@@ -64,7 +64,7 @@ I'm not sure if I'll get the opportunity to solve one of these puzzles like this
 
 $$\frac{-b + \sqrt{\Delta}}{2a} - \frac{-b - \sqrt{\Delta}}{2a} = \frac{\sqrt{\Delta}}{a}$$
 
-... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. so, all I needed to do was compute $\sqrt{\Delta} = \sqrt{b^{2} - 4c}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
+... where $a = 1$ and $b$ and $c$ are the two values provided in each column of input data. So, all I needed to do was compute $\sqrt{\Delta} = \sqrt{b^{2} - 4c}$ for each column. (There is one more set of shenanigans to account for the integer-only requirement -- the total number of integers $n$ that lie within the range, excluding the end points, is
 
 $$n = 2\lceil \frac{\sqrt{\Delta}}{2} \rceil - 1 \textrm{ if $b$ is even}$$
 
@@ -76,7 +76,7 @@ I learned how to compute square roots digit-by-digit for part 2 of this puzzle. 
 
 **Solving by hand**: look at me. I am the computer now.
 
-**~~Syntax~~ orthographic highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
+**~~Syntax~~ orthographic Highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
 
 Day 07: [Kona](https://github.com/kevinlawler/kona)
 ---------------------------------------------------
@@ -86,4 +86,14 @@ To solve this puzzle, I took advantage of the fact that the finding the frequenc
 
 **Kona**: it's point-free free, and it's free!
 
-**Syntax highlight**: `*` (unary/monadic: get the head of a list; binary/dyadic: multiply)
+**Syntax Highlight**: `*` (unary/monadic: get the head of a list; binary/dyadic: multiply)
+
+Day 08: CoffeeScript
+--------------------
+CoffeeScript is a syntactically convenient way of writing JavaScript, itself a very flexible language. The language's syntax feels very straightforward and sparse -- no unnecessary brackets, semicolons, or the like. Comprehensions make it easy to grok how lists are being put together, and as always, the higher-order functions like `map`, `filter` and `forEach` make this JavaScript-oriented language feel very easy to deal with.
+
+This is a puzzle that at first looks extraordinarily difficult. However, Eric has very carefully chosen a much easier special case of the problem (viz. each path starts at "XXA", ends at "XXZ", and then loops) that makes it possible to solve by taking the lowest common multiple of each path length.
+
+**CoffeeScript**: for those who like their coffee with sugar.
+
+**Syntax Highlight**: `->` (separates an anonymous function's arguments from its body)
