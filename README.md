@@ -97,3 +97,18 @@ This is a puzzle that at first looks extraordinarily difficult. However, Eric ha
 **CoffeeScript**: for those who like their coffee with sugar.
 
 **Syntax Highlight**: `->` (separates an anonymous function's arguments from its body)
+
+Day 09: Mercury
+---------------
+I've seen Mercury described as a mix between Haskell and Prolog. That's not a bad description. The way programs are written in Mercury (i.e. with predicates) feels very, very similar to Prolog; but one of the most noticeable differences is the type annotations of predicates and functions, which is very Haskell-like. It was tough to figure out the exact determinism of each predicate, so I omitted most of the declarations in favour of compiling the program with the `--infer-modes` flag.
+
+|             | 0 possible outputs | 1 possible output | Many possible outputs |
+| ----------- | ------------------ | ----------------- | --------------------- |
+| Cannot fail | Erroneous          | Deterministic     | Multisolution         |
+| May fail    | Failure            | Semideterministic | Nondeterministic      |
+
+My original (hasty) Python solution carried out the algorithm suggested in the problem statement. This program, in contrast, uses binomial coefficients to determine the solution without carrying that algorithm out. I'm not convinced this was a better way to solve it.
+
+**Mercury**: strongly-typed Prolog.
+
+**Syntax Highlight**: `(cond -> A ; B)` (an if-then-else statement that returns `B` if the `cond` predicate fails; this can be used to change a semideterministic predicate into a determistic one)
