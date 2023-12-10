@@ -4,7 +4,7 @@
 :- pred main(io::di, io::uo) is det.
 
 :- implementation.
-:- import_module char, int, string, list, require.
+:- import_module char, int, integer, string, list, require.
 
 % compile with --infer-modes
 
@@ -13,7 +13,7 @@
 is_zero(N) :- (N = 0).
 
 :- pred delta_map(list(int)::in, list(int)::uo) is det.
-delta_map([], _) :- error("Can't find delta map of empty list").
+delta_map([], _) :- error("Failed to find delta map (list is empty).").
 delta_map([_], []).
 delta_map([X1, X2 | Xs], [Y | Ys]) :-
     Y = X2 - X1,
@@ -30,15 +30,15 @@ poly_degree(Xs, N) :-
     ).
 
 % x0 - x1 + x2 - x3 + ...
+% (is this just foldr (-) 0?)
 :- pred alternating_sum(list(int)::di, int::uo) is det.
 alternating_sum([], 0).
 alternating_sum([X | Xs], Total) :-
     alternating_sum(Xs, Subtotal),
     Total = X - Subtotal.
 
-% Can't find choose(n, k) in library
-
-% Pascal's identity
+% Can't find choose(n, k) in standard library
+% (Pascal's identity isn't efficient, but it's easy)
 :- pred choose(int, int, int).
 choose(N, K, Res) :-
     ((K < 0 ; K > N) ->
@@ -79,27 +79,35 @@ prediction(Xs, L, R) :-
 solve([], 0, 0).
 solve([Xs | Xss], Part1, Part2) :-
     prediction(Xs, L, R),
-    solve(Xss, Ls, Rs),
-    Part1 = L + Ls,
-    Part2 = R + Rs.
+    solve(Xss, Rs, Ls),
+    Part1 = R + Rs,
+    Part2 = L + Ls.
 
-%:- pred numbersFromLine(string, list(int), int).
-%numbersFromLine(Line, [1, 2, 3], _).
-%:- pred numbersFromLine(string, list(int)).
-%numbersFromLine(Line, Xs) :- numbersFromLine(Line, Xs, 0).
+:- pred numbersFromLine(string, list(int)).
+numbersFromLine(Line, Xs) :-
+    Words = words(Line),
+    (map(from_string, Words, BigInts) ->
+        map(to_int, BigInts, Xs)
+    ;
+        error("Failed to parse line.")
+    ).
+
+% map(numbersFromLine, Lines, Xss) is not working the way I expect it to
+:- pred linesToSeqs(list(string), list(list(int))).
+linesToSeqs([], []).
+linesToSeqs([L | Ls], [Xs | Xss]) :-
+    numbersFromLine(L, Xs),
+    linesToSeqs(Ls, Xss).
 
 main(!IO) :-
-    %io.write_string("Hello, world!\n", !IO),
-    %poly_degree([2, 8, 18, 32], N), % N=2
-    %prediction([1, 3, 5], X, Y), % X=-1 Y=7
-
     read_named_file_as_lines("input09.txt", FileResult, !IO),
     (FileResult = ok(Lines) ->
-        %(map(numbersFromLine, Lines, Xss),
-        (Xss = [[1, 2, 3], [2, 8, 18, 32]],
-        solve(Xss, Part1, Part2),
-        io.format("%d\n%d\n", [i(Part1), i(Part2)], !IO))
+        (linesToSeqs(Lines, Xss) ->
+            (solve(Xss, Part1, Part2),
+            io.format("%d\n%d\n", [i(Part1), i(Part2)], !IO))
+        ;
+            error("Failed to convert line to ints.")
+        )
     ;
         error("Failed to read from file.")
     ).
-
