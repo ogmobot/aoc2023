@@ -14,9 +14,9 @@ load_input_data:
     # syscall 13 - open file
     la $a0 input_file_name
     # access flags
-    li $a1 0
+    xor $a1 $a1 $a1
     # mode (0 == O_RDONLY)
-    li $a2 0
+    xor $a2 $a2 $a2
     li $v0 13
     syscall
     sw $v0 file_descriptor
@@ -50,19 +50,98 @@ print_int_nl:
     jr $ra
 
 replace_S_with_pipe:
-    # FIXME
-    li $t0 '|'
-    lw $t1 start_location
-    sb $t0 grid_data($t1)
-    lw $t0 row_length
-    sw $t0 start_facing
+    # J=74 L=76 7=55 F=70 -=45 |=124
+    # t0 character from grid or to store
+    # t1 comparison character and facing to store
+    # t2 index into grid
+    # t3 table lookup
+    xor $t3 $t3 $t3
+
+    lw $t2 start_location
+    addiu $t2 $t2 1
+    lb $t0 grid_data($t2)
+    addiu $t1 $t0 -45
+    beq $0 $t1 rswp_connects_east
+    addiu $t1 $t0 -55
+    beq $0 $t1 rswp_connects_east
+    addiu $t1 $t0 -74
+    beq $0 $t1 rswp_connects_east
+    b rswp_check_south
+rswp_connects_east:
+    addiu $t3 $t3 1
+rswp_check_south:
+    lw $t2 start_location
+    lw $t1 row_length
+    addu $t2 $t2 $t1
+    lb $t0 grid_data($t2)
+    addiu $t1 $t0 -124
+    beq $0 $t1 rswp_connects_south
+    addiu $t1 $t0 -76
+    beq $0 $t1 rswp_connects_south
+    addiu $t1 $t0 -74
+    beq $0 $t1 rswp_connects_south
+    b rswp_check_west
+rswp_connects_south:
+    addiu $t3 $t3 2
+rswp_check_west:
+    # J=74 L=76 7=55 F=70 -=45 |=124
+    lw $t2 start_location
+    addiu $t2 $t2 -1
+    lb $t0 grid_data($t2)
+    addiu $t1 $t0 -45
+    beq $0 $t1 rswp_connects_west
+    addiu $t1 $t0 -70
+    beq $0 $t1 rswp_connects_west
+    addiu $t1 $t0 -76
+    beq $0 $t1 rswp_connects_west
+    b rswp_check_north
+rswp_connects_west:
+    addiu $t3 $t3 4
+rswp_check_north:
+    lw $t2 start_location
+    lw $t1 row_length
+    subu $t2 $t2 $t1
+    lb $t0 grid_data($t2)
+    addiu $t1 $t0 -124
+    beq $0 $t1 rswp_connects_north
+    addiu $t1 $t0 -70
+    beq $0 $t1 rswp_connects_north
+    addiu $t1 $t0 -55
+    beq $0 $t1 rswp_connects_north
+    b rswp_connects_done
+rswp_connects_north:
+    addiu $t3 $t3 8
+
+rswp_connects_done:
+    lbu $t0 S_type_table($t3)
+
+    # If S is |     : face south
+    # If S is 7 J   : face west
+    # If S is F L - : face east
+    addiu $t1 $t0 -124
+    beq $0 $t1 rswp_face_south
+    addiu $t1 $t0 -55
+    beq $0 $t1 rswp_face_west
+    addiu $t1 $t0 -74
+    beq $0 $t1 rswp_face_west
+    li $t1 1
+    b rswp_done
+rswp_face_south:
+    lw $t1 row_length
+    b rswp_done
+rswp_face_west:
+    li $t1 -1
+rswp_done:
+    sw $t1 start_facing
+    lw $t2 start_location
+    sb $t0 grid_data($t2)
     jr $ra
 
 find_S_and_row_length:
     # t0 character from grid
     # t1 comparison characters 'S' and '\n'
     # t2 index into grid
-    li $t2 0
+    xor $t2 $t2 $t2
 fsarl_loop:
     lbu $t0 grid_data($t2)
     li $t1 'S'
@@ -97,7 +176,7 @@ trace_pipe:
     # t1 comparison character
     # t2 index into grid
     # t3 facing
-    li $a0 0
+    xor $a0 $a0 $a0
     lw $t2 start_location
     lw $t3 start_facing
 
@@ -178,9 +257,9 @@ tally_interior_area:
     # t1 comparison characters
     # t2 index into grid
     # t3 flag for outside=0 inside=1
-    li $a0 0
-    li $t2 0
-    li $t3 0
+    xor $a0 $a0 $a0
+    xor $t2 $t2 $t2
+    xor $t3 $t3 $t3
 tia_loop:
     lbu $t0 grid_data($t2)
     # 'J'|80 == 202
@@ -239,6 +318,10 @@ hello_world:
     .asciiz "hello, world!\n"
 input_file_name:
     .asciiz "input10.txt"
+
+S_type_table:
+    # lookup with bitmask of NWSE
+    .ascii "xxxFx-7xxL|xJxxx"
 
     .align 2
 file_descriptor:
