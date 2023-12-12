@@ -52,8 +52,9 @@ print_int_nl:
 replace_S_with_pipe:
     # FIXME
     li $t0 '|'
-    sb $t0 grid_data($s0)
-    lw $t0 go_south
+    lw $t1 start_location
+    sb $t0 grid_data($t1)
+    lw $t0 row_length
     sw $t0 start_facing
     jr $ra
 
@@ -76,7 +77,8 @@ fsarl_skip_S:
     bne $t0 $t1 fsarl_skip_NL
     lw $t0 row_length
     bne $0 $t0 fsarl_skip_NL
-    sw $t2 row_length
+    addiu $t1 $t2 1
+    sw $t1 row_length
 fsarl_skip_NL:
     addiu $t2 $t2 1
     # Technically unnecessary to continue through the file after finding
@@ -105,21 +107,46 @@ tp_loop:
     bne $0 $t1 tp_done
 
     ori $t1 $t0 0x80
-    sw $t1 grid_data($t2)
+    sb $t1 grid_data($t2)
 
     addu $t2 $t2 $t3
-    addiu $a0 1
+    addiu $a0 $a0 1
     lbu $t0 grid_data($t2)
-    # TODO update facing based on $t0 and $t3
-    # e.g.
-    #       li $t1 'L'
-    # (and then, if equal to $t0 ...)
-    #       lw $t1 go_south
-    # (and then, if equal to $t3 ...)
-    #       lw $t3 go_east
-    # Would it be easier to load one into high bits
-    # and the other into the low bits?
-    # (If none are found, we're at the start of the loop.)
+
+    addiu $t1 $t3 1
+    beq $t1 $0 facing_west
+    addiu $t1 $t3 -1
+    beq $t1 $0 facing_east
+    lw $t1 row_length
+    beq $t3 $t1 facing_south
+    # b facing_north
+
+    # J=74 L=76 7=55 F=70
+facing_north:
+    addiu $t1 $t0 -55
+    beq $0 $t1 go_west
+    addiu $t1 $t0 -70
+    beq $0 $t1 go_east
+    b tp_loop
+facing_west:
+    addiu $t1 $t0 -76
+    beq $0 $t1 go_north
+    addiu $t1 $t0 -70
+    beq $0 $t1 go_south
+    b tp_loop
+facing_east:
+    addiu $t1 $t0 -74
+    beq $0 $t1 go_north
+    addiu $t1 $t0 -55
+    beq $0 $t1 go_south
+    b tp_loop
+facing_south:
+    addiu $t1 $t0 -74
+    beq $0 $t1 go_west
+    addiu $t1 $t0 -76
+    beq $0 $t1 go_east
+    b tp_loop
+
 go_south:
     lw $t3 row_length
     b tp_loop
@@ -148,7 +175,7 @@ tally_interior_area:
 
     # a0 total area
     # t0 character from grid
-    # t1 comparison characters '|'|80, 'L'|80 and 'J'|80
+    # t1 comparison characters
     # t2 index into grid
     # t3 flag for outside=0 inside=1
     li $a0 0
@@ -157,18 +184,21 @@ tally_interior_area:
 tia_loop:
     lbu $t0 grid_data($t2)
     # 'J'|80 == 202
-    li $t1 202
-    beq $t0 $t1 tia_toggle
+    addiu $t1 $t0 -202
+    beq $0 $t1 tia_toggle
     # 'L'|80 == 204
-    li $t1 204
-    beq $t0 $t1 tia_toggle
+    addiu $t1 $t0 -204
+    beq $0 $t1 tia_toggle
     # '|'|80 == 252
-    li $t1 252
-    bne $t0 $t1 tia_skip
+    addiu $t1 $t0 -252
+    bne $0 $t1 tia_skip_toggle
 tia_toggle:
     xori $t3 $t3 1
-tia_skip:
-    add $a0 $a0 $t3
+tia_skip_toggle:
+    addiu $t1 $t0 -0x80
+    bgez $t1 tia_skip_increment_total
+    addu $a0 $a0 $t3
+tia_skip_increment_total:
     addiu $t2 $t2 1
     lw $t1 grid_size
     bne $t2 $t1 tia_loop
