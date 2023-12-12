@@ -112,3 +112,17 @@ My original (hasty) Python solution carried out the algorithm suggested in the p
 **Mercury**: strongly-typed Prolog.
 
 **Syntax Highlight**: `(cond -> A ; B)` (an if-then-else statement that returns `B` if the `cond` predicate fails; this can be used to change a semideterministic predicate into a determistic one)
+
+Day 10: MIPS Assembly
+---------------------
+One of these days, I'll have to try writing in a contemporary assembly language. Older assembly languages, like MIPS, have myriad emulators that make it much easier to use (for instance, providing pseudo-instructions or subroutines that call `printf("%d")` or `getchar` or `putchar`). I spent some time figuring out how to push and pull values onto the stack via the `$sp` register, but I ended up not needing to use this trick as much as I imagined I would. The program also uses a tiny lookup table to figure out which symbol the `S` in the input should be replaced by. I suspect my program could be refactored a bit to make more use of lookup tables, for example when determining how to change direction when tracing pipes.
+
+One of the differences between MIPS and older assembly languages (e.g. that of the 6502 processor) is the ability to multiply numbers together in hardware. The product of the two selected 32-bit registers is placed into a *pair* of 32-bit integers, since the result may be up to 64 bits wide. This makes finding products a little finicky, but far less so than implementing it in software.
+
+I was surprised to discover that the leaderboard for this star took 30 minutes to fill up. If I wasn't otherwise occupied on the day it was released, I might have made it there myself. From what I've seen online, a lot of people attempted to find the interior area of the shape with a modified search algorithm; but it took me less than ten minutes to find an alternative solution and write it into my program. (Another, even more efficient way to solve it is using the shoelace formula, which I hadn't heard of at the time. This method involves finding the sum of products derived from the shape's vertices, and has the advantage that it can be carried out during the process of solving the first part of the problem. I didn't use that method here, though, since I wanted to avoid using multiplication in my solution.)
+
+Many thanks to James Larus, the author of *SPIM*, without which I would have had a much harder time.
+
+**MIPS Assembly**: hey, you can multiply numbers together in hardware now!
+
+**Syntax Highlight**: `$0` (a register that always contains the value 0)
