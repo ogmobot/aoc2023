@@ -1,0 +1,49 @@
+/* This routine adapted from common.ktn */
+define map_index_i64<A, B, +P> (List<A>, (A, Int64 -> B +P) -> List<B> +P):
+    0i64 map_index_i64::helper
+vocab map_index_i64 {
+    define helper<A, B, +P> (List<A>, (A, Int64 -> B +P), Int64 -> List<B> +P):
+        -> xs, f, i;
+        match (xs head_tail)
+        case none:
+            []
+        case some:
+            unpair -> y, ys;
+            y i f call -> z;
+            ys f (i + 1i64) helper -> zs;
+            z zs prepend
+}
+
+define find_index<T> (List<T>, T -> Int64 +Fail):
+    -> lst, target;
+    if (lst head "target not found" from_some = target):
+        0i64
+    else:
+        lst tail "" from_some
+        target find_index 1i64 (+)
+
+define empty_row (List<Pair<Int64, Int64>>, Int64 -> Bool):
+    -> pairs, row;
+    pairs \(first row =) any not
+define empty_col (List<Pair<Int64, Int64>>, Int64 -> Bool):
+    -> pairs, col;
+    pairs \(second col =) any not
+
+define get_galaxies (List<Char> -> Int64, List<Pair<Int64, Int64>> +Fail):
+    -> text;
+    text '\n' find_index 1i64 (+) /* Row length */
+    text {
+        -> elem, index;
+        if (elem = '#'):
+            dup dup
+            index swap (/) swap
+            index swap (%)
+            pair some
+        else:
+            none
+    } map_index_i64
+    \is_some filter \("" from_some) map
+
+/* Main */
+"input11.txt" read_file
+get_galaxies { unpair say say } each
