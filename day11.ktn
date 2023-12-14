@@ -1,4 +1,4 @@
-/* This routine adapted from common.ktn */
+/* These two routines adapted from common.ktn */
 define map_index_i64<A, B, +P> (List<A>, (A, Int64 -> B +P) -> List<B> +P):
     0i64 map_index_i64::helper
 vocab map_index_i64 {
@@ -13,6 +13,55 @@ vocab map_index_i64 {
             ys f (i + 1i64) helper -> zs;
             z zs prepend
 }
+define replicate_i64<T> (T, Int64 -> List<T>):
+    -> value, count;
+    if (count <= 0i64):
+        []
+    else:
+        value (count - 1i64) replicate_i64
+        value append
+
+define range (Int64, Int64 -> List<Int64> +Fail):
+    -> lo, hi;
+    if (lo > hi):
+        []
+    else:
+        lo hi 1i64 (-) range hi append
+
+define take<T> (List<T>, Int64 -> List<T> +Fail):
+    -> lst, n;
+    if (n = 0i64):
+        []
+    else:
+        lst head_tail "" from_some unpair
+        (n - 1i64) take prepend
+
+define zip_with<A, B, C, +P> (List<A>, List<B>, (A, B -> C +P) -> List<C> +P):
+    -> xs, ys, f;
+    match (xs head_tail)
+    case none:
+        []
+    case some:
+        unpair -> xh, xt;
+        match (ys head_tail)
+        case none:
+            []
+        case some:
+            unpair -> yh, yt;
+            xh yh f call
+            xt yt f zip_with
+            prepend
+
+define map_sublists<A, B, +P> (List<B>, (List<B> -> A +P) -> List<A> +P):
+    -> xs, f;
+    match (xs tail)
+    case none:
+        []
+    case some:
+        -> t;
+        xs f call
+        t f map_sublists
+        prepend
 
 define find_index<T> (List<T>, T -> Int64 +Fail):
     -> lst, target;
@@ -22,12 +71,96 @@ define find_index<T> (List<T>, T -> Int64 +Fail):
         lst tail "" from_some
         target find_index 1i64 (+)
 
-define empty_row (List<Pair<Int64, Int64>>, Int64 -> Bool):
+define contains (List<Int64>, Int64 -> Bool):
+    -> xs, target;
+    xs \(target =) any
+
+define is_empty_row (List<Pair<Int64, Int64>>, Int64 -> Bool):
     -> pairs, row;
     pairs \(first row =) any not
-define empty_col (List<Pair<Int64, Int64>>, Int64 -> Bool):
+define is_empty_col (List<Pair<Int64, Int64>>, Int64 -> Bool):
     -> pairs, col;
     pairs \(second col =) any not
+
+define find_empty_lines (List<Pair<Int64, Int64>>, Int64 -> List<Int64>, List<Int64> +Fail):
+    -> coords, grid_size;
+    0i64 grid_size range
+    { -> x;
+        if (coords x is_empty_row):
+            x some
+        else:
+            none
+    } map
+    \is_some filter \("" from_some) map
+    0i64 grid_size range
+    { -> x;
+        if (coords x is_empty_col):
+            x some
+        else:
+            none
+    } map
+    \is_some filter \("" from_some) map
+
+define get_line_widths (Int64, List<Int64>, Int64 -> List<Int64> +Fail):
+    -> stretch_factor, empty_ordinates, size;
+    0i64 size range
+    {
+        -> index;
+        if (empty_ordinates index contains):
+            1i64 stretch_factor (*)
+        else:
+            1i64
+    } map
+
+define do_stretch (List<Int64>, List<Int64>, Int64, Int64 -> List<Int64> +Fail):
+    -> ordinates, empty_ordinates, stretch, size;
+    stretch empty_ordinates size get_line_widths -> line_widths;
+    match (ordinates head_tail)
+    case some:
+        unpair -> h, t;
+        line_widths h take
+        0i64 \+ fold_left
+        t empty_ordinates stretch size do_stretch
+        prepend
+    case none:
+        []
+
+define manhattan<T> (Pair<T, T>, Pair<T, T> -> T):
+    -> a, b;
+    a first b first (-) abs
+    a second b second (-) abs
+    (+)
+
+define find_distance_sum (
+    List<Int64>, List<Int64>, List<Pair<Int64, Int64>>, Int64, Int64
+    -> Int64 +Fail
+):
+    -> empty_rows, empty_cols, galaxies, stretch, size;
+    galaxies \first  map empty_rows stretch size do_stretch
+    galaxies \second map empty_cols stretch size do_stretch
+    \pair zip_with
+    {
+        head_tail "" from_some unpair -> h, t;
+        t { -> x; x h manhattan } map
+        0i64 \+ fold_left
+    } map_sublists
+    0i64 \+ fold_left
+/*
+    find_distance_sum::rec
+vocab find_distance_sum {
+    define rec (List<Pair<Int64, Int64>> -> Int64):
+        -> xs;
+        match (xs head_tail)
+        case some:
+            unpair -> h, t;
+            t { -> y; manhattan h y } map
+            0i64 \+ fold_left
+            t rec
+            (+)
+        case none:
+            []
+}
+*/
 
 define get_galaxies (List<Char> -> Int64, List<Pair<Int64, Int64>> +Fail):
     -> text;
@@ -46,4 +179,11 @@ define get_galaxies (List<Char> -> Int64, List<Pair<Int64, Int64>> +Fail):
 
 /* Main */
 "input11.txt" read_file
-get_galaxies { unpair say say } each
+get_galaxies
+{ -> size, galaxies; galaxies size find_empty_lines galaxies size } call
+{ -> empty_rows, empty_cols, galaxies, size;
+    /* Takes a while... */
+    [2i64, 1000000i64] { -> x;
+        empty_rows empty_cols galaxies x size find_distance_sum say
+    } each
+} call
