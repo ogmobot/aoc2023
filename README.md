@@ -126,3 +126,15 @@ Many thanks to James Larus, the author of *SPIM*, without which I would have had
 **MIPS Assembly**: hey, you can multiply numbers together in hardware now!
 
 **Syntax Highlight**: `$0` (a register that always contains the value 0)
+
+Day 11: Kitten
+--------------
+It's been a hot minute since I used a con**cat**enative language. Kitten is a bit unusual for a concatenative language. It uses infix arithmetic and supports locally-scoped variables. Its `if-then-else` blocks work in a way that feels quite un-FORTH-like. I made heavy use of local variables in this program, which probably contributes to its slow runtime. I found the presence of Haskell-like algebraic types helpful in some ways (keeping track of number and position of arguments), but the language's lack of integer type casting was very frustrating. Rather than writing functions that could accept any integral type, I hardcoded a lot of `Int64`s.
+
+Speaking of functions, the language's standard library was lacking a handful of common functions that I ended up implementing by hand: `n take` (the first n items of a list), `xs ys f zip_with` (fold a pair of lists together using a given function) and `haystack needle contains` (determine whether an element is present in a list). In addition, I modified some existing functions to work with `Int64` values, rather than the default `Int32` (`map_index_i64`, `replicate_i64`). I feel like this is a language that is almost good, but isn't quite there yet.
+
+My hasty Python solution for this day's task got me to the 31st place on the leaderboard! (My time of 6 minutes and 42 seconds was faster than the runtime of this Kitten solution.)
+
+**Kitten**: it might be good one day.
+
+**Syntax Highlight**: `\f` (syntax sugar for the anonymous function `{ f }`)
