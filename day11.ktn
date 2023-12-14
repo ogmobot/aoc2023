@@ -145,22 +145,6 @@ define find_distance_sum (
         0i64 \+ fold_left
     } map_sublists
     0i64 \+ fold_left
-/*
-    find_distance_sum::rec
-vocab find_distance_sum {
-    define rec (List<Pair<Int64, Int64>> -> Int64):
-        -> xs;
-        match (xs head_tail)
-        case some:
-            unpair -> h, t;
-            t { -> y; manhattan h y } map
-            0i64 \+ fold_left
-            t rec
-            (+)
-        case none:
-            []
-}
-*/
 
 define get_galaxies (List<Char> -> Int64, List<Pair<Int64, Int64>> +Fail):
     -> text;
@@ -182,7 +166,7 @@ define get_galaxies (List<Char> -> Int64, List<Pair<Int64, Int64>> +Fail):
 get_galaxies
 { -> size, galaxies; galaxies size find_empty_lines galaxies size } call
 { -> empty_rows, empty_cols, galaxies, size;
-    /* Takes a while... */
+    /* Takes ~40 minutes for each part */
     [2i64, 1000000i64] { -> x;
         empty_rows empty_cols galaxies x size find_distance_sum say
     } each
