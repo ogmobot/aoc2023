@@ -16,7 +16,7 @@ load_input_data:
     xor $a2 $a2 $a2
     addiu $v0 $0 13
     syscall
-    sw $v0 file_descriptor
+    addiu $s1 $v0 0
 
     # syscall 14 - read
     addu $a0 $0 $v0
@@ -24,10 +24,10 @@ load_input_data:
     addiu $a2 $0 0x6000
     addiu $v0 $0 14
     syscall
-    sw $v0 grid_size
+    addiu $s0 $v0 0
 
     # syscall 16 - close file
-    lw $a0 file_descriptor
+    addiu $a0 $s1 0
     addiu $v0 $0 16
     syscall
 
@@ -159,8 +159,8 @@ fsarl_skip_NL:
     addiu $t2 $t2 1
     # Technically unnecessary to continue through the file after finding
     # both S and row_length, but it's easier to write this way.
-    lw $t1 grid_size
-    bne $t2 $t1 fsarl_loop
+    # s0 == grid_size
+    bne $t2 $s0 fsarl_loop
 fsarl_done:
     jr $ra
 
@@ -276,8 +276,8 @@ tia_skip_toggle:
     addu $a0 $a0 $t3
 tia_skip_increment_total:
     addiu $t2 $t2 1
-    lw $t1 grid_size
-    bne $t2 $t1 tia_loop
+    # $s0 == grid_size
+    bne $t2 $s0 tia_loop
 tia_done:
     jal print_int_nl
 
@@ -286,12 +286,22 @@ tia_done:
     jr $ra
 
 main:
+    addiu $sp $sp -12
+    sw $ra 4 ($sp)
+    sw $s0 8 ($sp)
+    sw $s1 12 ($sp)
+
     jal load_input_data
     jal find_S_and_row_length
     jal replace_S_with_pipe
 
     jal trace_pipe
     jal tally_interior_area
+
+    lw $s1 12 ($sp)
+    lw $s0 8 ($sp)
+    lw $ra 4 ($sp)
+    addiu $sp $sp 12
 
     # syscall 10 - exit with 0
     addiu $v0 $0 10
@@ -306,10 +316,6 @@ S_type_table:
     .ascii "xxxFx-7xxL|xJxxx"
 
     .align 2
-file_descriptor:
-    .word 0
-grid_size:
-    .word 0
 start_location:
     # this get overwritten by find_S_and_row_length
     .word 0
