@@ -7,7 +7,7 @@ class Memoised
         if not (@memo.key? args) then
             @memo[args] = @func.call *args
         end
-        return @memo[args]
+        @memo[args]
     end
 end
 
@@ -21,8 +21,7 @@ def maybe_consume (s, amount)
     elsif s.length == amount and s.chars.all? { |c| "#?".include? c } then
         ""
     else
-        res = s.sub (Make_regexp.of amount), "."
-        res
+        s.sub (Make_regexp.of amount), "."
     end
 end
 
