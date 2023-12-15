@@ -77,9 +77,7 @@ Object subclass: Grid [
                 ].
             ].
         ].
-        "('Initialising ' , (features size asString) , ' features...') printNl."
         features do: [ :feature | feature init: features ].
-        "'Finished initialising.' printNl."
     ]
     solveP1 [
         ^(features inject: 0 into: [ :total :feature |

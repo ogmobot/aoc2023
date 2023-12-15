@@ -1,13 +1,10 @@
-    # A note on mnemonics:
-    # - `li reg val` expands to
-    #       `lui reg (upper short of val)
-    #        ori reg reg (lower short of val)`
+    # Note:
     # - `la label` expands to
     #       `li (address of label)`
-    # - `move r1 r2` expands to
-    #       `addu r1 $0 r2`
-    # - `not r1 r2` expands to
-    #       `nor r1 r2 $0`
+
+    # s0: grid_size
+    # s1: file_descriptor, then row_length
+
     .globl main
     .text
 load_input_data:
@@ -17,21 +14,21 @@ load_input_data:
     xor $a1 $a1 $a1
     # mode (0 == O_RDONLY)
     xor $a2 $a2 $a2
-    li $v0 13
+    addiu $v0 $0 13
     syscall
     sw $v0 file_descriptor
 
     # syscall 14 - read
-    move $a0 $v0
+    addu $a0 $0 $v0
     la $a1 grid_data
-    li $a2 0x8000
-    li $v0 14
+    addiu $a2 $0 0x6000
+    addiu $v0 $0 14
     syscall
     sw $v0 grid_size
 
     # syscall 16 - close file
     lw $a0 file_descriptor
-    li $v0 16
+    addiu $v0 $0 16
     syscall
 
     jr $ra
@@ -39,12 +36,12 @@ load_input_data:
 print_int_nl:
     # prints (and mangles) the integer value in $a0
     # syscall 1 - output decimal integer
-    li $v0 1
+    addiu $v0 $0 1
     syscall
 
     # syscall 11 - putchar
-    li $a0 10
-    li $v0 11
+    addiu $a0 $0 10
+    addiu $v0 $0 11
     syscall
 
     jr $ra
@@ -124,13 +121,13 @@ rswp_connects_done:
     beq $0 $t1 rswp_face_west
     addiu $t1 $t0 -74
     beq $0 $t1 rswp_face_west
-    li $t1 1
+    addiu $t1 $0 1
     b rswp_done
 rswp_face_south:
     lw $t1 row_length
     b rswp_done
 rswp_face_west:
-    li $t1 -1
+    addiu $t1 $0 -1
 rswp_done:
     sw $t1 start_facing
     lw $t2 start_location
@@ -144,7 +141,7 @@ find_S_and_row_length:
     xor $t2 $t2 $t2
 fsarl_loop:
     lbu $t0 grid_data($t2)
-    li $t1 'S'
+    addiu $t1 $0 'S'
     bne $t0 $t1 fsarl_skip_S
     sw $t2 start_location
     # Must wait until row_length exists before replace_S... can be called.
@@ -152,7 +149,7 @@ fsarl_loop:
 fsarl_skip_S:
     # It's guaranteed t0 hasn't changed yet
     #lbu $t0 grid_data($t2)
-    li $t1 10
+    addiu $t1 $0 10
     bne $t0 $t1 fsarl_skip_NL
     lw $t0 row_length
     bne $0 $t0 fsarl_skip_NL
@@ -234,10 +231,10 @@ go_north:
     subu $t3 $0 $t3
     b tp_loop
 go_east:
-    li $t3 1
+    addiu $t3 $0 1
     b tp_loop
 go_west:
-    li $t3 -1
+    addiu $t3 $0 -1
     b tp_loop
 
 tp_done:
@@ -288,19 +285,6 @@ tia_done:
     addiu $sp $sp 4
     jr $ra
 
-function_that_calls_a_function:
-    # push return value onto stack
-    addiu $sp $sp -4
-    sw $ra 4 ($sp)
-
-    li $a0 123
-    jal  print_int_nl
-
-    # pop return value from stack
-    lw $ra 4 ($sp)
-    addiu $sp $sp 4
-    jr $ra
-
 main:
     jal load_input_data
     jal find_S_and_row_length
@@ -310,12 +294,10 @@ main:
     jal tally_interior_area
 
     # syscall 10 - exit with 0
-    li $v0 10
+    addiu $v0 $0 10
     syscall
 
     .data
-hello_world:
-    .asciiz "hello, world!\n"
 input_file_name:
     .asciiz "input10.txt"
 
@@ -340,4 +322,4 @@ row_length:
     .word 0
 grid_data:
     # need at least 19740 bytes
-    .space 0x8000
+    .space 0x6000

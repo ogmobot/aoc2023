@@ -145,7 +145,7 @@ Day 12: Ruby
 ------------
 Ruby is a fun little language. Although I haven't used it very much in the past, I feel quite familiar with its syntax because of its similarities with Crystal and Python. (I wonder if I'll regret using it here, instead of on a later day...) One of the reasons I picked Ruby is because I wanted to experiment with the little memoisation pattern that you see in this program. I found a way to use it twice in this solution: once for Part 2 of the problem (for which it's practically mandatory) and one for a little subroutine that creates regular expressions (which can be done without, but cuts the runtime by 30%). I'm not sure that the way I've written and used the Memoised class is very idiomatic of the language -- presumeably it'd be more Ruby-esque to write subclasses that inherit from it, and those subclasses would then solve the problem.
 
-The Ruby interpreter is very slow compared to some of the other languages I've used. My Python implementation of this program takes ~3 seconds, which is just over 10 times faster than my 40-second Ruby solution. Ruby's syntax is nice to work with; but for speed, switch to Crystal.
+The Ruby interpreter is very slow compared to some of the other languages I've used. My Python implementation of this program takes ~3 seconds, which is just over 10 times faster than my 40-second Ruby solution. Ruby's syntax is nice to work with; but for speed, Crystal would be a much better choice.
 
 **Ruby**: an easy way to solve hard problems (at a gentle pace).
 
