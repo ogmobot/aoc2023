@@ -141,7 +141,7 @@ define find_distance_sum (
     \pair zip_with
     {
         head_tail "" from_some unpair -> h, t;
-        t { -> x; x h manhattan } map
+        t { h manhattan } map
         0i64 \+ fold_left
     } map_sublists
     0i64 \+ fold_left
