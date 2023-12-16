@@ -1,6 +1,11 @@
 ;; Run with
 ;;  orion day13.orn < input13.txt
 
+;; Notes:
+;;      `>=` and some related inequalities seem borked
+;;      Attempting to call functions passed as arguments sometimes seems borked
+;;      Literal negative numbers seem borked
+
 (def filter (\ (list f)
     (match list
         ((Cons h t)
@@ -37,8 +42,6 @@
         (Nil 0)
         ((Cons x xs) (+ x (sum xs))))))
 
-(def isqrt (\ (a x)
-    (if (>= (* a a) x) a (isqrt (+ a 1) x))))
 
 ;; Flip across horizontal axis
 (def flip-h (\ (grid row)
@@ -82,21 +85,36 @@
             (intersection (get-coords grid-a) (get-coords grid-b))
             (\ (x) (if (= (lookup grid-a x) (lookup grid-b x)) 0 1))))))
 
-;; Nested `if` seems borked
+(def find-grid-height (\ (grid)
+    (length (filter grid
+                    (\ (x)
+                        (match x
+                            ((Cons (Cons r c) val)
+                                (= r 0))
+                            (_ False)))))))
+(def find-grid-width (\ (grid)
+    (length (filter grid
+                    (\ (x)
+                        (match x
+                            ((Cons (Cons r c) val)
+                                (= c 0))
+                            (_ False)))))))
+
 (def find-axis-h (\ (grid target r)
     (if (= target (count-imperfections (flip-h grid r) grid))
-        r
-        (if (= r (- (isqrt 1 (length grid)) 1))
-            999999
+        (* 100 r)
+        (if (= r (- (find-grid-height grid) 1))
+            (- 0 999999)
             (find-axis-h grid target (+ r 1))))))
 
 (def find-axis-v (\ (grid target c)
     (if (= target (count-imperfections (flip-v grid c) grid))
         c
-        (if (= c (- (isqrt 1 (length grid)) 1))
+        (if (= c (- (find-grid-width grid) 1))
             (find-axis-h grid target 1)
             (find-axis-v grid target (+ c 1))))))
 
+;; FIXME only works for target == 0
 (def find-axis-score (\ (grid target)
     (find-axis-v grid target 1)))
 
@@ -129,10 +147,18 @@
 
 (def 'impure main (\ () {
     (def 'impure grids (get-grids))
-    (match grids
-        ((Cons grid _)
-            (print (find-axis-score grid 0)))
-            ;; "Not the same enum variants, expected 0x0003, found 0x0002"
-            ;; What the heck does that mean???
-        (Nil Nil))
+    (print (sum (map grids (\ (g) (find-axis-score g 0)))))
+    ;(print (sum (map grids (\ (g) (find-axis-score g 1)))))
     }))
+
+;; example (2 grids)
+;; 405 (5 + 400)
+;; 400 (300 + 100)
+
+;; first 5 grids of real input
+;; 1915 (takes ~1m30s)
+;; 630
+
+;; real input (100 grids)
+;; 39939 (estimated time ~20 minutes)
+;; 32069
