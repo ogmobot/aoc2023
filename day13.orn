@@ -154,18 +154,6 @@
 
 (def 'impure main (\ () {
     (def 'impure grids (get-grids))
-    ;; Takes about 20 minutes per part
+    ;; Takes about 35 minutes per part
     (print (sum (map grids (\ (g) (find-axis-score g 0)))))
     (print (sum (map grids (\ (g) (find-axis-score g 2)))))}))
-
-;; example (2 grids)
-;; 405 (5 + 400)
-;; 400 (300 + 100)
-
-;; first 5 grids of real input (takes ~1m30s for each part)
-;; 1915 (= 700 + 1200 + 2 + 12 + 1)
-;; 630 (= 12 + 500 + 100 + 6 + 12)
-
-;; real input (100 grids)
-;; 39939 (estimated time ~20 minutes)
-;; 32069
