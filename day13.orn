@@ -42,7 +42,6 @@
         (Nil 0)
         ((Cons x xs) (+ x (sum xs))))))
 
-
 ;; Flip across horizontal axis
 (def flip-h (\ (grid row)
     (map grid
@@ -85,36 +84,39 @@
             (intersection (get-coords grid-a) (get-coords grid-b))
             (\ (x) (if (= (lookup grid-a x) (lookup grid-b x)) 0 1))))))
 
-(def find-grid-height (\ (grid)
+(def gRID-WIDTH  (Cons 999999 (- 0 1)))
+(def gRID-HEIGHT (Cons (- 0 1) 999999))
+(def find-grid-width-slow (\ (grid)
     (length (filter grid
                     (\ (x)
                         (match x
                             ((Cons (Cons r c) val)
                                 (= r 0))
                             (_ False)))))))
-(def find-grid-width (\ (grid)
+(def find-grid-height-slow (\ (grid)
     (length (filter grid
                     (\ (x)
                         (match x
                             ((Cons (Cons r c) val)
                                 (= c 0))
                             (_ False)))))))
+(def find-grid-width (\ (grid) (lookup grid gRID-WIDTH)))
+(def find-grid-height (\ (grid) (lookup grid gRID-HEIGHT)))
 
 (def find-axis-h (\ (grid target r)
     (if (= target (count-imperfections (flip-h grid r) grid))
         (* 100 r)
-        (if (= r (- (find-grid-height grid) 1))
+        (if (= (+ r 1) (find-grid-height grid))
             (- 0 999999)
             (find-axis-h grid target (+ r 1))))))
 
 (def find-axis-v (\ (grid target c)
     (if (= target (count-imperfections (flip-v grid c) grid))
         c
-        (if (= c (- (find-grid-width grid) 1))
+        (if (= (+ c 1) (find-grid-width grid))
             (find-axis-h grid target 1)
             (find-axis-v grid target (+ c 1))))))
 
-;; FIXME only works for target == 0
 (def find-axis-score (\ (grid target)
     (find-axis-v grid target 1)))
 
@@ -142,22 +144,27 @@
 
 (def 'impure get-grids (\ ()
     (match (get-single-grid)
-        ((Just g) (Cons g (get-grids)))
+        ((Just g) (Cons
+            (append
+                (Cons (Cons gRID-WIDTH (find-grid-width-slow g))
+                      (Cons (Cons gRID-HEIGHT (find-grid-height-slow g)) Nil))
+                g)
+            (get-grids)))
         (Nothing Nil))))
 
 (def 'impure main (\ () {
     (def 'impure grids (get-grids))
+    ;; Takes about 20 minutes per part
     (print (sum (map grids (\ (g) (find-axis-score g 0)))))
-    ;(print (sum (map grids (\ (g) (find-axis-score g 1)))))
-    }))
+    (print (sum (map grids (\ (g) (find-axis-score g 2)))))}))
 
 ;; example (2 grids)
 ;; 405 (5 + 400)
 ;; 400 (300 + 100)
 
-;; first 5 grids of real input
-;; 1915 (takes ~1m30s)
-;; 630
+;; first 5 grids of real input (takes ~1m30s for each part)
+;; 1915 (= 700 + 1200 + 2 + 12 + 1)
+;; 630 (= 12 + 500 + 100 + 6 + 12)
 
 ;; real input (100 grids)
 ;; 39939 (estimated time ~20 minutes)
