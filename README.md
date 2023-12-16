@@ -150,3 +150,17 @@ The Ruby interpreter is very slow compared to some of the other languages I've u
 **Ruby**: an easy way to solve hard problems (at a gentle pace).
 
 **Syntax Highlight**: `&` (calls the `to_proc` method on the following symbol, effectively letting you create blocks that consist of a single symbol)
+
+Day 13: [Orion](https://github.com/wafelack/orion)
+--------------------------------------------------
+Orion is a LISP-inspired language developed by a high school student. It compiles to an intermediate representation (ORC) that runs on the Orion VM. I have to say, this is very cool. How does it compare to the other small, hobbyist languages I've tried?
+
+The language has a very small standard library that exists externally to the language itself. Languages like Noulith and Slouch are so specialised that all of their keywords and functions are baked into the language itself; and Uxntal, while it has the ability to import and combine files, doesn't have a standard library used by every project. Languages like Kitten or Factor, on the other hand, are very small languages with very large standard libraries. Some of the functions that would have been nice to see are `filter`, `append`, `zip-with` (or even `zip`), `member?` and `intersection`. The language's syntax and semantics are far enough from most LISPs that moving another language's library over would require a fair bit of work. (For example `(car (Cons x y))` produces `(Just x)`, rather than `x`.)
+
+Some parts of the language don't seem to be working as intended. One particularly egregious example is functions like `>=`, which seem to confuse the compiled representation. Treating functions as data (e.g. passing them as arguments, returning them from functions) also seems bug-prone. The language lacks keywords like `eval` and `apply` that might otherwise make it flexible enough to address these shortcomings. There seems to be no way to write literal negative integers. The language is also pretty sluggish (although this is nothing special for custom interpreted languages like this one). On the plus side, there is a macro system (although I didn't use it in this solution). Its pattern-matching on `Cons` and `Just` are also pretty cool.
+
+I'm glad this language exists -- in fact, I think that every programmer that takes themselves seriously should attempt to create something like this. It was frustrating to work with, though.
+
+**Orion**: proof that you, too, can write your own language.
+
+**Syntax Highlight**: `λ` (or, equivalently, `\`; creates an anonymous function, like the `lambmda` keyword in other LISPs)
