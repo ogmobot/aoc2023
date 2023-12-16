@@ -14,13 +14,6 @@
         (Nil ys)
         ((Cons h t) (Cons h (append t ys))))))
 
-(def range (\ (a b)
-    (Cons
-        a
-        (if (= a b)
-            Nil
-            (range (+ a 1) b)))))
-
 (def zip-with (\ (xs ys f)
     (match xs
         (Nil Nil)
@@ -38,13 +31,14 @@
 (def intersection (\ (xs ys)
     (filter xs (\ (x) (member? ys x)))))
 
-;; Applies f to each x in a list of (x . y)
-;; (borked)
-(def transform-first (\ (list f)
-    (map list (\ (pair)
-        (match pair
-            ((Cons x y) (Cons (f x) (transform-first y f)))
-            (_ (panic "Attempted to transform-first of non-Cons")))))))
+;; (foldl 0 + list) isn't cooperating
+(def sum (\ (list)
+    (match list
+        (Nil 0)
+        ((Cons x xs) (+ x (sum xs))))))
+
+(def isqrt (\ (a x)
+    (if (>= (* a a) x) a (isqrt (+ a 1) x))))
 
 ;; Flip across horizontal axis
 (def flip-h (\ (grid row)
@@ -52,8 +46,7 @@
         (\ (entry)
             (match entry
                 ((Cons (Cons r c) val)
-                    ; FIXME
-                    (Cons (Cons (- row r) c) val))
+                    (Cons (Cons (- (- (* 2 row) 1) r) c) val))
                 (_
                     (panic "Entry in wrong format")))))))
 
@@ -63,8 +56,7 @@
         (\ (entry)
             (match entry
                 ((Cons (Cons r c) val)
-                    ; FIXME
-                    (Cons (Cons r (- col c)) val))
+                    (Cons (Cons r (- (- (* 2 col) 1) c)) val))
                 (_
                     (panic "Entry in wrong format")))))))
 
@@ -76,21 +68,37 @@
                 (lookup rest key-coord)))
         (_ (panic "Lookup failed")))))
 
+(def get-coords (\ (grid)
+    (map
+        grid
+        (\ (x)
+            (match x
+                ((Cons coord val) coord)
+                (_ (panic "get-coords failed")))))))
+
 (def count-imperfections (\ (grid-a grid-b)
-    ;; ah, crap...
-    ;; FIXME
-    {(def grid-a-coords
-        (map grid-a
-             (\ (x) (match x ((Cons coord _) coord) (_ (panic "grid-a"))))))
-    (def grid-b-coords
-        (map grid-b
-             (\ (x) (match x ((Cons coord _) coord) (_ (panic "grid-a"))))))
-    (foldl 0
-        (\ (acc coord)
-            (if (= (lookup grid-a coord) (lookup grid-b coord))
-                (+ acc 1)
-                acc))
-        (intersection grid-a-coords grid-b-coords))}))
+    (sum
+        (map
+            (intersection (get-coords grid-a) (get-coords grid-b))
+            (\ (x) (if (= (lookup grid-a x) (lookup grid-b x)) 0 1))))))
+
+;; Nested `if` seems borked
+(def find-axis-h (\ (grid target r)
+    (if (= target (count-imperfections (flip-h grid r) grid))
+        r
+        (if (= r (- (isqrt 1 (length grid)) 1))
+            999999
+            (find-axis-h grid target (+ r 1))))))
+
+(def find-axis-v (\ (grid target c)
+    (if (= target (count-imperfections (flip-v grid c) grid))
+        c
+        (if (= c (- (isqrt 1 (length grid)) 1))
+            (find-axis-h grid target 1)
+            (find-axis-v grid target (+ c 1))))))
+
+(def find-axis-score (\ (grid target)
+    (find-axis-v grid target 1)))
 
 (def make-row (\ (row-index s)
     (zip-with
@@ -123,14 +131,8 @@
     (def 'impure grids (get-grids))
     (match grids
         ((Cons grid _)
-            (print (count-imperfections grid grid)))
+            (print (find-axis-score grid 0)))
+            ;; "Not the same enum variants, expected 0x0003, found 0x0002"
+            ;; What the heck does that mean???
         (Nil Nil))
     }))
-
-;;; Weird...
-;;; (def from-just (\ (x) (match x ((Just a) a) (Nothing Nil))))
-;;; (def f (\ (x) (+ x 1)))
-;;; (def car' (\ (pair) (from-just (car pair) Nil)))
-;;; (car' (Cons 3 5)) => 3
-;;; (f 3) => 4
-;;; (f (car' (Cons 3 5))) => Error: Expected a Lambda, found a Integer
