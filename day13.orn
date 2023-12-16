@@ -1,0 +1,60 @@
+(def filter (\ (list f)
+    (match list
+        ((Cons h t)
+            (match (f h)
+                (True (Cons h (filter t f)))
+                (False (filter t f))))
+        (Nil Nil))))
+
+; Test membership (in O(n))
+(def member? (\ (list elem)
+    (match list
+        (Nil False)
+        ((Cons h t) (or (= h elem) (member? t elem))))))
+
+(def intersection (\ (xs ys)
+    (filter xs (\ (x) (member? ys x)))))
+
+;; Applies f to each x in a list of (x . y)
+;; (borked)
+(def transform-first (\ (list f)
+    (map list (\ (pair)
+        (match pair
+            ((Cons x y) (Cons (f x) (transform-first y f)))
+            (_ (panic "Attempted to transform-first of non-Cons")))))))
+
+;; Flip across horizontal axis
+(def flip-h (\ (grid row)
+    (map grid
+        (\ (entry)
+            (match entry
+                ((Cons (Cons r c) val)
+                    ; FIXME
+                    (Cons (Cons (- row r) c) val))
+                (_
+                    (panic "Entry in wrong format")))))))
+
+;; Flip across vertical axis
+(def flip-v (\ (grid col)
+    (map grid
+        (\ (entry)
+            (match entry
+                ((Cons (Cons r c) val)
+                    ; FIXME
+                    (Cons (Cons r (- col c)) val))
+                (_
+                    (panic "Entry in wrong format")))))))
+
+(def 'impure main (\ () {
+    (print (flip-v (Cons (Cons (Cons 0 0) "#") Nil) 5))
+    (print (flip-h (Cons (Cons (Cons 0 0) "#") Nil) 5))
+    (print (intersection [3 5 4 7] [1 2 3 4]))
+    }))
+
+;;; Weird...
+;;; (def from-just (\ (x) (match x ((Just a) a) (Nothing Nil))))
+;;; (def f (\ (x) (+ x 1)))
+;;; (def car' (\ (pair) (from-just (car pair) Nil)))
+;;; (car' (Cons 3 5)) => 3
+;;; (f 3) => 4
+;;; (f (car' (Cons 3 5))) => Error: Expected a Lambda, found a Integer
