@@ -1,3 +1,6 @@
+;; Run with
+;;  orion day13.orn < input13.txt
+
 (def filter (\ (list f)
     (match list
         ((Cons h t)
@@ -6,7 +9,27 @@
                 (False (filter t f))))
         (Nil Nil))))
 
-; Test membership (in O(n))
+(def append (\ (xs ys)
+    (match xs
+        (Nil ys)
+        ((Cons h t) (Cons h (append t ys))))))
+
+(def range (\ (a b)
+    (Cons
+        a
+        (if (= a b)
+            Nil
+            (range (+ a 1) b)))))
+
+(def zip-with (\ (xs ys f)
+    (match xs
+        (Nil Nil)
+        ((Cons x xrest)
+            (match ys
+                (Nil Nil)
+                ((Cons y yrest)
+                    (Cons (f x y) (zip-with xrest yrest f))))))))
+
 (def member? (\ (list elem)
     (match list
         (Nil False)
@@ -45,10 +68,63 @@
                 (_
                     (panic "Entry in wrong format")))))))
 
+(def lookup (\ (grid key-coord)
+    (match grid
+        ((Cons (Cons coord val) rest)
+            (if (= coord key-coord)
+                val
+                (lookup rest key-coord)))
+        (_ (panic "Lookup failed")))))
+
+(def count-imperfections (\ (grid-a grid-b)
+    ;; ah, crap...
+    ;; FIXME
+    {(def grid-a-coords
+        (map grid-a
+             (\ (x) (match x ((Cons coord _) coord) (_ (panic "grid-a"))))))
+    (def grid-b-coords
+        (map grid-b
+             (\ (x) (match x ((Cons coord _) coord) (_ (panic "grid-a"))))))
+    (foldl 0
+        (\ (acc coord)
+            (if (= (lookup grid-a coord) (lookup grid-b coord))
+                (+ acc 1)
+                acc))
+        (intersection grid-a-coords grid-b-coords))}))
+
+(def make-row (\ (row-index s)
+    (zip-with
+        (range 0 (length s))
+        s
+        (\ (col-index c) (Cons (Cons row-index col-index) c)))))
+
+(def 'impure get-remaining-grid (\ (row-index)
+    (match (chars (getLine))
+        (Nil Nil)
+        ((Cons h t)
+            (append (make-row row-index (Cons h t))
+                    (get-remaining-grid (+ row-index 1)))))))
+
+(def 'impure get-single-grid (\ ()
+    ; If first line is blank, we are at end of input
+    (match (chars (getLine))
+        (Nil Nothing)
+        ((Cons h t)
+            (Just
+                (append (make-row 0 (Cons h t))
+                        (get-remaining-grid 1)))))))
+
+(def 'impure get-grids (\ ()
+    (match (get-single-grid)
+        ((Just g) (Cons g (get-grids)))
+        (Nothing Nil))))
+
 (def 'impure main (\ () {
-    (print (flip-v (Cons (Cons (Cons 0 0) "#") Nil) 5))
-    (print (flip-h (Cons (Cons (Cons 0 0) "#") Nil) 5))
-    (print (intersection [3 5 4 7] [1 2 3 4]))
+    (def 'impure grids (get-grids))
+    (match grids
+        ((Cons grid _)
+            (print (count-imperfections grid grid)))
+        (Nil Nil))
     }))
 
 ;;; Weird...
