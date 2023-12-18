@@ -163,4 +163,4 @@ I'm glad this language exists -- in fact, I think that every programmer that tak
 
 **Orion**: proof that you, too, can write your own language.
 
-**Syntax Highlight**: `λ` (or, equivalently, `\`; creates an anonymous function, like the `lambmda` keyword in other LISPs)
+**Syntax Highlight**: `λ` (or, equivalently, `\`; creates an anonymous function, like the `lambda` keyword in other LISPs)

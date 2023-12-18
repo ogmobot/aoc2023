@@ -62,8 +62,7 @@ replace_S_with_pipe:
     addiu $t1 $t0 -55
     beq $0 $t1 rswp_connects_east
     addiu $t1 $t0 -74
-    beq $0 $t1 rswp_connects_east
-    b rswp_check_south
+    bne $0 $t1 rswp_check_south
 rswp_connects_east:
     addiu $t3 $t3 1
 rswp_check_south:
@@ -76,12 +75,10 @@ rswp_check_south:
     addiu $t1 $t0 -76
     beq $0 $t1 rswp_connects_south
     addiu $t1 $t0 -74
-    beq $0 $t1 rswp_connects_south
-    b rswp_check_west
+    bne $0 $t1 rswp_check_west
 rswp_connects_south:
     addiu $t3 $t3 2
 rswp_check_west:
-    # J=74 L=76 7=55 F=70 -=45 |=124
     lw $t2 start_location
     addiu $t2 $t2 -1
     lb $t0 grid_data($t2)
@@ -90,8 +87,7 @@ rswp_check_west:
     addiu $t1 $t0 -70
     beq $0 $t1 rswp_connects_west
     addiu $t1 $t0 -76
-    beq $0 $t1 rswp_connects_west
-    b rswp_check_north
+    bne $0 $t1 rswp_check_north
 rswp_connects_west:
     addiu $t3 $t3 4
 rswp_check_north:
@@ -104,8 +100,7 @@ rswp_check_north:
     addiu $t1 $t0 -70
     beq $0 $t1 rswp_connects_north
     addiu $t1 $t0 -55
-    beq $0 $t1 rswp_connects_north
-    b rswp_connects_done
+    bne $0 $t1 rswp_connects_done
 rswp_connects_north:
     addiu $t3 $t3 8
 
