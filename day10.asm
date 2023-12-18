@@ -1,9 +1,10 @@
     # Note:
-    # - `la label` expands to
-    #       `li (address of label)`
+    # - `la reg label` expands to
+    #       `lui (upper address of label)`
+    #       `ori (lower address of label)`
 
     # s0: grid_size
-    # s1: file_descriptor, then row_length
+    # s1: file_descriptor
 
     .globl main
     .text
@@ -19,7 +20,7 @@ load_input_data:
     addiu $s1 $v0 0
 
     # syscall 14 - read
-    addu $a0 $0 $v0
+    addiu $a0 $v0 0
     la $a1 grid_data
     addiu $a2 $0 0x6000
     addiu $v0 $0 14
@@ -56,7 +57,7 @@ replace_S_with_pipe:
 
     lw $t2 start_location
     addiu $t2 $t2 1
-    lb $t0 grid_data($t2)
+    lbu $t0 grid_data($t2)
     addiu $t1 $t0 -45
     beq $0 $t1 rswp_connects_east
     addiu $t1 $t0 -55
@@ -69,7 +70,7 @@ rswp_check_south:
     lw $t2 start_location
     lw $t1 row_length
     addu $t2 $t2 $t1
-    lb $t0 grid_data($t2)
+    lbu $t0 grid_data($t2)
     addiu $t1 $t0 -124
     beq $0 $t1 rswp_connects_south
     addiu $t1 $t0 -76
@@ -81,7 +82,7 @@ rswp_connects_south:
 rswp_check_west:
     lw $t2 start_location
     addiu $t2 $t2 -1
-    lb $t0 grid_data($t2)
+    lbu $t0 grid_data($t2)
     addiu $t1 $t0 -45
     beq $0 $t1 rswp_connects_west
     addiu $t1 $t0 -70
@@ -94,7 +95,7 @@ rswp_check_north:
     lw $t2 start_location
     lw $t1 row_length
     subu $t2 $t2 $t1
-    lb $t0 grid_data($t2)
+    lbu $t0 grid_data($t2)
     addiu $t1 $t0 -124
     beq $0 $t1 rswp_connects_north
     addiu $t1 $t0 -70
@@ -312,15 +313,15 @@ S_type_table:
 
     .align 2
 start_location:
-    # this get overwritten by find_S_and_row_length
+    # this gets overwritten by find_S_and_row_length
     .word 0
-start_facing:
-    # this get overwritten by replace_S_with_pipe
-    .word 0
-
 row_length:
     # this gets overwritten by find_S_and_row_length
     .word 0
+start_facing:
+    # this gets overwritten by replace_S_with_pipe
+    .word 0
+
 grid_data:
     # need at least 19740 bytes
     .space 0x6000
