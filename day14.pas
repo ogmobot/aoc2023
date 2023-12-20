@@ -13,8 +13,9 @@ type Coord = record
 end;
 
 type LongPair = record
-    first: LongInt;
-    second: LongInt;
+    (* No longer a pair of longs *)
+    key: Integer;
+    value: Int64;
 end;
 
 type Platform = record
@@ -25,7 +26,6 @@ type Platform = record
        addition to the list of sliders *)
     data: Array of Array of Char;
 end;
-
 
 function readGrid(filename: String): Platform;
 var
@@ -64,15 +64,42 @@ begin
         end;
         row := row + 1;
     end;
-    result.height := row;
 end;
 
-function getStress(grid: Platform): Integer;
+const STRESS_MOD = 200000;
+function stressHash(grid: Platform): Int64;
 var x: ^Coord;
 begin
     result := 0;
     for x in grid.sliders do
+    begin
         result := result + grid.height - x^.row;
+        result := result + (STRESS_MOD * (x^.col mod 100))
+    end;
+end;
+
+function searchByKey(alist: TFPList; key: Integer): Pointer;
+var item: ^LongPair;
+begin
+    result := nil;
+    for item in alist do
+        if item^.key = key then
+        begin
+            result := item;
+            break;
+        end;
+end;
+
+function searchByValue(alist: TFPList; value: Int64): Pointer;
+var item: ^LongPair;
+begin
+    result := nil;
+    for item in alist do
+        if item^.value = value then
+        begin
+            result := item;
+            break;
+        end;
 end;
 
 procedure slide(grid: Platform; dr: Integer; dc: Integer);
@@ -102,20 +129,56 @@ begin
     end;
 end;
 
-procedure spinCycle(grid: Platform);
+procedure spin(grid: Platform);
 (* Takes ~6s for 1000 cycles *)
 begin
-    slide(grid, -1, 0);
-    slide(grid, 0, -1);
-    slide(grid, 1, 0);
-    slide(grid, 0, 1);
+    slide(grid, -1,  0);
+    slide(grid,  0, -1);
+    slide(grid,  1,  0);
+    slide(grid,  0,  1);
 end;
 
-const NUM_CYCLES = 1000000000;
+function stressAt(grid: Platform; numSpins: LongInt): LongInt;
+var
+    spun: LongInt; cycleLength: Integer;
+    history: TFPList; pair: ^LongPair; stress: Int64;
+begin
+    for spun := 1 to 20 do
+        spin(grid);
+    spun := 20;
+    history := TFPList.create;
+    while spun < numSpins do
+    begin
+        stress := stressHash(grid);
+        pair := searchByValue(history, stress);
+        if nil <> pair then
+        begin
+            cycleLength := spun - pair^.key;
+            pair := searchByKey(
+                history,
+                spun + ((numSpins - spun) mod cycleLength) - cycleLength
+            );
+            result := (pair^.value) mod STRESS_MOD;
+            break;
+        end;
+        new(pair);
+        pair^.key := spun;
+        pair^.value := stressHash(grid);
+        history.add(pair);
+
+        spin(grid);
+        spun := spun + 1;
+    end;
+    history.clear;
+end;
 
 var grid: Platform;
 begin
     grid := readGrid('input14.txt');
     slide(grid, -1, 0);
-    writeln(getStress(grid));
+    writeln(stressHash(grid) mod STRESS_MOD);
+
+    writeln(stressAt(grid, 1000000000));
+
+    grid.sliders.clear;
 end.
