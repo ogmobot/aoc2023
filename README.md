@@ -72,7 +72,7 @@ $$n = \lceil \frac{\sqrt{\Delta} - 1}{2} \rceil + \lceil \frac{\sqrt{\Delta} + 1
 
 I have a marvellous proof for these two equations, but it won't fit within this section of the README.)
 
-I learned how to compute square roots digit-by-digit for part 2 of this puzzle. Squaring one eight-dight number and then finding the square root of a sixteen-digit one was a doozy. I hope to scan a re-written version of this solution in pen at some point, so it's more legible.
+I learned how to compute square roots digit-by-digit for part 2 of this puzzle. Squaring one eight-dight number and then finding the square root of a sixteen-digit one was a doozy. My original work was in pencil, but I've scanned in an inked version for better legibility. (When re-writing the solution in pen, I left out a few minor calculations, such as squaring two-digit numbers.)
 
 **Solving by hand**: look at me. I am the computer now.
 
