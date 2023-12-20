@@ -4,7 +4,6 @@ program day14;
 
 uses
     SysUtils,
-    (*Contnrs,*)
     Classes;
 
 type Coord = record
@@ -12,8 +11,7 @@ type Coord = record
     col: Integer;
 end;
 
-type LongPair = record
-    (* No longer a pair of longs *)
+type StressPair = record
     key: Integer;
     value: Int64;
 end;
@@ -50,8 +48,10 @@ begin
         for ch in buffer do
         begin
             if result.width <= col + 1 then
+            begin
                 result.width := col + 1;
                 setLength(result.data, result.height, result.width);
+            end;
             result.data[row][col] := ch;
             if ch = 'O' then
             begin
@@ -64,10 +64,20 @@ begin
         end;
         row := row + 1;
     end;
+    close(inFile);
 end;
 
 const STRESS_MOD = 200000;
 function stressHash(grid: Platform): Int64;
+(*
+    The stress of a configuration alone is not unique enough to hash it.
+    Instead, add a number derived from the column-coordinates. The actual
+    stress of a configuration can be found by taking
+        (stressHash(configuration) mod (STRESS_MOD)).
+    Note that STRESS_MOD must be greater than the greatest possible value
+    of stress. Also note that STRESS_MOD * (sum of (x^.col mod 100))
+    must fit into a 64-bit integer.
+*)
 var x: ^Coord;
 begin
     result := 0;
@@ -79,7 +89,7 @@ begin
 end;
 
 function searchByKey(alist: TFPList; key: Integer): Pointer;
-var item: ^LongPair;
+var item: ^StressPair;
 begin
     result := nil;
     for item in alist do
@@ -91,7 +101,7 @@ begin
 end;
 
 function searchByValue(alist: TFPList; value: Int64): Pointer;
-var item: ^LongPair;
+var item: ^StressPair;
 begin
     result := nil;
     for item in alist do
@@ -103,6 +113,7 @@ begin
 end;
 
 procedure slide(grid: Platform; dr: Integer; dc: Integer);
+(* Mutates grid *)
 var moved: Boolean; item: ^Coord; candidate: Coord;
 begin
     moved := true;
@@ -141,11 +152,9 @@ end;
 function stressAt(grid: Platform; numSpins: LongInt): LongInt;
 var
     spun: LongInt; cycleLength: Integer;
-    history: TFPList; pair: ^LongPair; stress: Int64;
+    history: TFPList; pair: ^StressPair; stress: Int64;
 begin
-    for spun := 1 to 20 do
-        spin(grid);
-    spun := 20;
+    spun := 0;
     history := TFPList.create;
     while spun < numSpins do
     begin

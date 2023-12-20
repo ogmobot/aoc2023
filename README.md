@@ -164,3 +164,17 @@ I'm glad this language exists -- in fact, I think that every programmer that tak
 **Orion**: proof that you, too, can write your own language.
 
 **Syntax Highlight**: `λ` (or, equivalently, `\`; creates an anonymous function, like the `lambda` keyword in other LISPs)
+
+Day 14: Pascal
+--------------
+(Specifically, this is Object Pascal -- the version supported by the Free Pascal compiler.) Pascal certainly feels like an older language. It has pointer types, the ability to allocate or free memory, and a directive to modify the size of an array. Variables used by a procedure or function must be declared before its body. Integer widths can be specified (and indeed gave me a little trouble in Part 2 of this problem). Hash maps are fiddly to set up, unless the types of your keys and values line up with a pre-existing one.
+
+On the other hand, it is definitely not a low-level language, *per se*. Memory management doesn't seem to be as intense as in C, for example; and there are abstractions like iterators for `for` loops. Object Pascal also has classes and methods. I can see why this language was popular for teaching programming in the past.
+
+Since the language is older than C, it doesn't use the conventions that became the *de facto* standard post-C. Pointer dereferencing is written `p^`, not `*p`. Blocks are written `begin end;`, not `{ };`. Assignment, equality test and inequality test are `:=`, `=` and `<>` rather than `=`, `==` and `!=` respectively. Pascal was evidently popular enough, though, that amongst languages further away from the C family, many of these syntax conventions have survived to the present day.
+
+My Pascal solution to this problem runs quite a bit faster than my Python one. This is probably because it uses an array to lookup obstacles, and doesn't constantly allocate memory to convert the list of rocks to a set for hashing. (Rather, this version simply moves stuff in place and uses a hash function related to the "stress" used to solve the problem.)
+
+**Pascal**: a high-level language from an age of low-level computing.
+
+**Syntax Highlight**: `^` (declares or dereferences pointers)
