@@ -1,36 +1,96 @@
 ; Compile and link with
 ;   nasm <this>.asm -f elf64 -o <object>.o ; ld <object>.o -o <binary>
 
+%define SYSCALL_READ       0
 %define SYSCALL_WRITE      1
+%define SYSCALL_OPEN       2
+%define SYSCALL_CLOSE      3
 %define SYSCALL_EXIT      60
+%define MAX_FILE_SIZE 0x6000    ; (in bytes)
 %define TABLE_SIZE       256    ; (in cells)
 %define MAX_CELLS       4096
 %define CELL_SIZE         16    ; (in bytes)
 
     global _start
+
     section .text
-_start:
+
+printd_newline:
+    ; Prints the value in rdi.
+    ; Mangles rax, rcx, rdx, r10, output_buffer.
+    mov rax, 0x0a30202020202020 ; "      0\n", no null
+    mov [output_buffer], rax
+    mov rcx, output_buffer + 6 ; write bytes to here
+    mov r10, 10 ; divisor
+    mov rax, rdi
+    mov rdx, 0
+    ; div divides rdx:rax by divisor
+    ; quotient=rax, remainder=rdx
+pdn_next_digit:
+    div r10
+    add rdx, 0x30
+    mov byte [rcx], dl
+    dec rcx
+    mov rdx, 0
+    cmp rax, 0
+    je pdn_done
+    jmp pdn_next_digit
+pdn_done:
     mov rax, SYSCALL_WRITE
     mov rdi, 1  ; file descriptor (stdout)
-    mov rsi, message ; pointer to string
-    mov rdx, 14 ; message length
+    mov rsi, output_buffer ; pointer to string
+    mov rdx, 8 ; message length
     syscall
-    mov rax, SYSCALL_EXIT
-    xor rdi, rdi ; exit code (0)
+    ret
+
+load_file:
+    ; Uses the open, read and close syscalls to load a file into
+    ; memory location file_contents. rdi points to filename.
+    mov rax, SYSCALL_OPEN
+    ; rdi already points to filename
+    mov rsi, 0 ; flags (0 = read-only)
+    mov rdx, 0 ; mode
     syscall
+    ; fd in rax
+
+    mov rdi, rax
+    ; save rdi to the stack, just in case READ modifies it
+    sub rsp, 8
+    push rdi
+
+    mov rax, SYSCALL_READ
+    mov rsi, file_contents
+    mov rdx, MAX_FILE_SIZE
+    syscall
+
+    pop rdi
+    add rsp, 8
+
+    ; fd already in rdi
+    mov rax, SYSCALL_CLOSE
+    syscall
+    ret
+
+get_hash:
+    ; Hashes the string pointed to by rdi, and puts result in rax.
+    ; Mangles rax, rcx, rdx
+    mov rax, 0
+    mov rdx, 0
+gh_next_letter:
+    mov byte cl, [rdi + rdx]
+    cmp byte cl, 0
+    je gh_done
+    add word ax, cx
+    imul ax, 17
+    mov byte ah, 0
+    inc rdx
+    jmp gh_next_letter
+gh_done:
+    ret
 
 ; FIXME
 ; rough sketches for required functions
-get_hash:
-    ; given STR
-    ; acc := 0
-    ; i := 0
-    ; while STR[i] != \0
-    ;   acc += STR[i]
-    ;   acc *= 17
-    ;   acc &= 0xFF
-    ;   i++
-    ; return acc
+
 key_match:
     ; A, B are pointers to strings
     ; (e.g. ptr to cell[0..7] and ptr to hashkeybuffer)
@@ -86,8 +146,6 @@ delete_from_table:
 evaluate_table:
     ; determines score of the table for part 2
 
-load_file_into_memory:
-    ; TODO figure out syscalls
 solve_p1:
     ; fptr := file_contents
     ; i := 0
@@ -128,14 +186,36 @@ solve_p2:
     ;   fptr++
     ;   goto loop
 
+_start:
+    mov rax, SYSCALL_WRITE
+    mov rdi, 1  ; file descriptor (stdout)
+    mov rsi, message ; pointer to string
+    mov rdx, 14 ; message length
+    syscall
+
+    mov rdi, message
+    call get_hash
+    mov rdi, rax
+    call printd_newline
+    ; Hash of "Hello, world!\n" should be 211
+
+    call load_file
+
+    mov rax, SYSCALL_EXIT
+    mov rdi, 0 ; exit code
+    syscall
+
     section .data
+    align 8
+output_buffer:
+    times 8 db 0
 message:
     db "Hello, world!", 10
 hashkeybuffer:
     times 16 db 0
 
 file_contents:
-    times 0x6000 db 0
+    times MAX_FILE_SIZE db 0
 
 hash_table:
     ; Each element of the table is a dummy cell with a raw pointer to
