@@ -147,21 +147,53 @@ evaluate_table:
     ; determines score of the table for part 2
 
 solve_p1:
-    ; fptr := file_contents
-    ; i := 0
-    ; total := 0
-    ; loop
-    ;   if *fptr == \n or *fptr == ,
-    ;       hashkeybuffer[i] = \0
-    ;       total += get_hash(hashkeybuffer)
-    ;       if  *fptr == \n
-    ;           print total
-    ;           return
-    ;       i := 0
-    ;   hashkeybuffer[i] = *fptr
-    ;   fptr++
-    ;   i++
-    ;   goto loop
+    ; rax = pointer to hashkeybuffer
+    ;*rbx = pointer to file
+    ;  cl = character at pointer
+    ;*r12 = problem solution
+    ; (* callee responsibility - save on stack)
+    sub rsp, 16
+    push rbx
+    push r12
+
+    mov rbx, file_contents
+    mov rax, hashkeybuffer
+    mov r12, 0
+p1_next_char:
+    mov byte cl, [rbx]
+    cmp byte cl, 0x0a ; newline
+    je p1_done
+    cmp byte cl, 0x00 ; NULL (should never happen)
+    je p1_done
+    cmp byte cl, 0x2c ; comma
+    je p1_end_word
+    mov byte [rax], cl
+    inc rax
+    inc rbx
+    jmp p1_next_char
+p1_end_word:
+    ; (correctly) gets called 4000 times
+    mov rdi, hashkeybuffer
+    call get_hash
+    add r12, rax
+
+    mov rax, hashkeybuffer
+    inc rbx
+    jmp p1_next_char
+
+p1_done:
+    mov rdi, hashkeybuffer
+    call get_hash
+    add r12, rax
+
+    mov rdi, r12
+    call printd_newline
+
+    pop r12
+    pop rbx
+    add rsp, 16
+    ret
+
 solve_p2:
     ; fptr := file_contents
     ; i := 0
@@ -199,7 +231,10 @@ _start:
     call printd_newline
     ; Hash of "Hello, world!\n" should be 211
 
+    mov rdi, input_file_name
     call load_file
+
+    call solve_p1 ; expect 511215, but currently getting 506511
 
     mov rax, SYSCALL_EXIT
     mov rdi, 0 ; exit code
@@ -214,6 +249,8 @@ message:
 hashkeybuffer:
     times 16 db 0
 
+input_file_name:
+    db "input15.txt", 0
 file_contents:
     times MAX_FILE_SIZE db 0
 
