@@ -172,7 +172,7 @@ p1_next_char:
     inc rbx
     jmp p1_next_char
 p1_end_word:
-    ; (correctly) gets called 4000 times
+    mov byte [rax], 0
     mov rdi, hashkeybuffer
     call get_hash
     add r12, rax
@@ -182,6 +182,7 @@ p1_end_word:
     jmp p1_next_char
 
 p1_done:
+    mov byte [rax], 0
     mov rdi, hashkeybuffer
     call get_hash
     add r12, rax
@@ -219,22 +220,10 @@ solve_p2:
     ;   goto loop
 
 _start:
-    mov rax, SYSCALL_WRITE
-    mov rdi, 1  ; file descriptor (stdout)
-    mov rsi, message ; pointer to string
-    mov rdx, 14 ; message length
-    syscall
-
-    mov rdi, message
-    call get_hash
-    mov rdi, rax
-    call printd_newline
-    ; Hash of "Hello, world!\n" should be 211
-
     mov rdi, input_file_name
     call load_file
 
-    call solve_p1 ; expect 511215, but currently getting 506511
+    call solve_p1
 
     mov rax, SYSCALL_EXIT
     mov rdi, 0 ; exit code
@@ -244,8 +233,6 @@ _start:
     align 8
 output_buffer:
     times 8 db 0
-message:
-    db "Hello, world!", 10
 hashkeybuffer:
     times 16 db 0
 
