@@ -7,9 +7,10 @@
 %define SYSCALL_CLOSE      3
 %define SYSCALL_EXIT      60
 %define MAX_FILE_SIZE 0x6000    ; (in bytes)
-%define TABLE_SIZE       256    ; (in cells)
-%define MAX_CELLS       4096
+%define TABLE_SIZE     0x100    ; (in cells)
+%define MAX_CELLS     0x1000
 %define CELL_SIZE         16    ; (in bytes)
+%define CELL_IN_USE     0x80    ; (bit flag)
 
     global _start
 
@@ -88,31 +89,75 @@ gh_next_letter:
 gh_done:
     ret
 
-; FIXME
-; rough sketches for required functions
-
 key_match:
-    ; A, B are pointers to strings
-    ; (e.g. ptr to cell[0..7] and ptr to hashkeybuffer)
-    ; caller must ensure they're null-terminated
-    ; i := 0
-    ; loop
-    ;   if A[i] != B[i]
-    ;     return false
-    ;   if A[i] == \0
-    ;     return true
-    ;   i++
-    ;   goto loop
+    ; Test whether the strings at rdi and rsi are equal.
+    ; Mangles rdi, rsi, rcx and rdx.
+    ; Sets rax to 1 if the strings match and 0 otherwise.
+    dec rdi
+    dec rsi
+km_next:
+    inc rdi
+    inc rsi
+    mov cl, [rsi]
+    mov dl, [rdi]
+    cmp byte cl, dl
+    jne km_fail
+    cmp byte cl, 0
+    jne km_next
+km_succeed:
+    mov rax, 1
+    ret
+km_fail:
+    mov rax, 0
+    ret
+
 create_cell:
     ; Given KEY and VAL, inserts those into a free cell
     ; and returns a pointer to it
-    ; ptr := ht_cells
-    ; while (ptr[7] != 0)
-    ;    ptr += CELL_SIZE
-    ; strcopy ptr[0..7], KEY
-    ; ptr[7] = 0x80 | VAL
-    ; ptr[8..16] = NULL
-    ; return ptr
+    ; rdi is pointer to key
+    ; sil is a byte containing value
+
+    ; Find first empty cell
+    mov rax, [first_empty_cell]
+    sub rax, CELL_SIZE
+cc_find_unused:
+    add rax, CELL_SIZE
+    cmp rax, ht_cell_limit
+    jne cc_dont_reset_rax
+    mov rax, ht_cells
+cc_dont_reset_rax:
+    mov cl, [rax+7]
+    test byte cl, CELL_IN_USE
+    jnz cc_find_unused
+
+    ; rax points to an empty cell
+    add rax, CELL_SIZE
+    mov [first_empty_cell], rax
+    sub rax, CELL_SIZE
+
+    ; cell->next = NULL;
+    mov qword [rax + 8], 0
+    ; cell->in_use = 1;
+    ; cell->val = sil;
+    or byte sil, CELL_IN_USE
+    mov byte [rax + 7], sil
+
+    ; Now we can use rsi for copying the string into bytes 0..7
+    mov rsi, rax
+cc_strcpy:
+    mov byte cl, [rdi]
+    cmp byte cl, 0
+    je cc_strcpy_done
+    mov byte [rsi], cl
+    inc rsi
+    inc rdi
+    jmp cc_strcpy
+cc_strcpy_done:
+    mov byte [rsi], 0
+    ret
+
+; FIXME
+; rough sketches for required functions
 
 insert_into_table:
     ; Given KEY and VAL, updates the hash table.
@@ -230,7 +275,9 @@ _start:
     syscall
 
     section .data
-    align 8
+
+first_empty_cell:
+    dq ht_cells
 output_buffer:
     times 8 db 0
 hashkeybuffer:
@@ -249,7 +296,7 @@ ht_cells:
     ; This is a pool of "ht" cells, each consisting of
     ; - 1 bit flag for whether this cell is in use (1=yes, 0=no)
     ; - 7-byte string identifier (\0 must appear at or before 7th byte)
-    ; - 7-bit numerical value
+    ; - 7-bit unsigned numerical value (0 - 127) (actually 0-9)
     ; - 8-byte pointer to next cell (raw pointer)
     ;   ** OFFSET OF 0 IS ALWAYS INVALID **
     ; These are laid out thus:
@@ -267,3 +314,4 @@ ht_cells:
     ;   until a cell with non-zero 8th byte is found and
     ;   set that one up.
     times (CELL_SIZE * MAX_CELLS) db 0
+ht_cell_limit:
