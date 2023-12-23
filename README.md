@@ -2,8 +2,8 @@ Advent of Code 2023
 ===================
 Another year... *another* 25 languages. Let's see how we go this time.
 
-Day 01: Bash (and UNIX text utilities)
---------------------------------------
+Day 01: [Bash](https://www.gnu.org/software/bash/manual/bash.html) (and UNIX text utilities)
+--------------------------------------------------------------------------------------------
 I've been using shell scripts for years now. Knowing the basics of Bash has let me log debug output, hexdump malfunctioning assembly code, time my Advent of Code solutions, and so on. This is the first time I've actually combined shell utilities together to solve a puzzle. There's so much power in these tiny tools, and I've tapped only a fraction of it here. Perhaps I should try using them to solve problems more often.
 
 My Python solution approaches this problem with regular expressions and a dictionary of english digit names, but I've used a less clever solution here (replacing word names with their matching digits, but not interfering with overlapping words). This seems like a good fit for stream- and text-editing programs. (I also could have piped the whole thing into `awk`, or `python -c`; but that would defeat the purpose, wouldn't it?) I also learned about the `mktemp` program. Originally, I was trying to figure out how to `tee` standard output into two different commands, but this solution seemed cleaner.
@@ -24,8 +24,8 @@ You might notice that the program file uses `crlf` (DOS-style) newline character
 
 **Syntax Highlight**: `from native reference` (this specific text gets find/replace'd into `import` during transpilation)
 
-Day 03: Smalltalk
------------------
+Day 03: [Smalltalk](https://www.gnu.org/software/smalltalk/manual/gst.html)
+---------------------------------------------------------------------------
 Wow, now I know what they mean when they say Smalltalk is a *purely* object-oriented language. Even conditionals are object oriented: Booleans have `ifTrue:` and `ifFalse:` methods that take blocks of code as parameters, hence you get stuff like `(a > b) ifTrue: [ 'yes' ] ifFalse: [ 'no' ].`. Similarly, loops tend to be the `do:` method called on collections.
 
 I've not solved this problem in a very efficient way, and Smalltalk isn't known for being fast. Still, it was a fun system to mess around with. Ruby certainly took a huge amount of inspiration from it; I think Smalltalk must have been where declaring variables with `| x |` originated.
@@ -48,8 +48,8 @@ Some of the function names were not quite what I expected them to be, but they a
 
 **Syntax Highlight**: `dijkstra` (a function which, given a start point, end point, and a function that maps each point to its neighbours [along with their respective distances], carries out Dijkstra's algorithm to find the shortest path between those two points)
 
-Day 05: Scheme 9 from Empty Space
----------------------------------
+Day 05: [Scheme 9 from Empty Space](https://t3x.org/s9fes)
+----------------------------------------------------------
 LISP is back, baby! S9fES seems like a pretty standard Scheme. It's quick to download, build from source, and install; and comes with a pretty nice library of functions. I had to fiddle with the installation a bit to get it working, though (compile with `-fno-pie`, disable randomised memory addressing with `setarch --addr-no-randomize s9`, set up a new Image file with `s9 -i - -d s9.image`).
 
 The solution I wrote for this puzzle goes wild with the whole functions-as-first-class-values thing (perhaps as a penace for my horrible Guile Scheme program in the 2021 challenge). Every triple of integers that appears in the input file is converted to a function (a `minimapper`); each section is converted to a `mapper` that can push values through all of its `minimappers`; and finally all of the `mappers` are composed together into a single function. All that remains is to apply this function to the input and find the minimum value in the codomain.
@@ -70,13 +70,13 @@ $$n = 2\lceil \frac{\sqrt{\Delta}}{2} \rceil - 1 \textrm{ if $b$ is even}$$
 
 $$n = \lceil \frac{\sqrt{\Delta} - 1}{2} \rceil + \lceil \frac{\sqrt{\Delta} + 1}{2} \rceil - 1 \textrm{ if $b$ is odd}$$
 
-I have a marvellous proof for these two equations, but it won't fit within this section of the README.)
+I have discovered a truly marvellous proof for this, which this section of the README is not large enough to contain.)
 
 I learned how to compute square roots digit-by-digit for part 2 of this puzzle. Squaring one eight-dight number and then finding the square root of a sixteen-digit one was a doozy. My original work was in pencil, but I've scanned in an inked version for better legibility. (When re-writing the solution in pen, I left out a few minor calculations, such as squaring two-digit numbers.)
 
 **Solving by hand**: look at me. I am the computer now.
 
-**~~Syntax~~ orthographic Highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
+**~~Syntax~~ Orthographic Highlight**: the square root symbol, $\sqrt{}$, which my solution makes heavy use of
 
 Day 07: [Kona](https://github.com/kevinlawler/kona)
 ---------------------------------------------------
@@ -88,8 +88,8 @@ To solve this puzzle, I took advantage of the fact that the finding the frequenc
 
 **Syntax Highlight**: `*` (unary/monadic: get the head of a list; binary/dyadic: multiply)
 
-Day 08: CoffeeScript
---------------------
+Day 08: [CoffeeScript](https://coffeescript.org)
+------------------------------------------------
 CoffeeScript is a syntactically convenient way of writing JavaScript, itself a very flexible language. The language's syntax feels very straightforward and sparse -- no unnecessary brackets, semicolons, or the like. Comprehensions make it easy to grok how lists are being put together, and as always, the higher-order functions like `map`, `filter` and `forEach` make this JavaScript-oriented language feel very easy to deal with.
 
 This is a puzzle that at first looks extraordinarily difficult. However, Eric has very carefully chosen a much easier special case of the problem (viz. each path starts at "XXA", ends at "XXZ", and then loops) that makes it possible to solve by taking the lowest common multiple of each path length.
@@ -98,8 +98,8 @@ This is a puzzle that at first looks extraordinarily difficult. However, Eric ha
 
 **Syntax Highlight**: `->` (separates an anonymous function's arguments from its body)
 
-Day 09: Mercury
----------------
+Day 09: [Mercury](https://mercurylang.org)
+------------------------------------------
 I've seen Mercury described as a mix between Haskell and Prolog. That's not a bad description. The way programs are written in Mercury (i.e. with predicates) feels very, very similar to Prolog; but one of the most noticeable differences is the type annotations of predicates and functions, which is very Haskell-like. It was tough to figure out the exact determinism of each predicate, so I omitted most of the declarations in favour of compiling the program with the `--infer-modes` flag.
 
 |             | 0 possible outputs | 1 possible output | Many possible outputs |
@@ -113,8 +113,8 @@ My original (hasty) Python solution carried out the algorithm suggested in the p
 
 **Syntax Highlight**: `(cond -> A ; B)` (an if-then-else statement that returns `B` if the `cond` predicate fails; this can be used to change a semideterministic predicate into a determistic one)
 
-Day 10: MIPS Assembly
----------------------
+Day 10: [MIPS Assembly](https://sourceforge.net/projects/spimsimulator)
+-----------------------------------------------------------------------
 One of these days, I'll have to try writing in a contemporary assembly language. Older assembly languages, like MIPS, have myriad emulators that make it much easier to use (for instance, providing pseudo-instructions or subroutines that call `printf("%d")` or `getchar` or `putchar`). I spent some time figuring out how to push and pull values onto the stack via the `$sp` register, but I ended up not needing to use this trick as much as I imagined I would. The program also uses a tiny lookup table to figure out which symbol the `S` in the input should be replaced by. I suspect my program could be refactored a bit to make more use of lookup tables, for example when determining how to change direction when tracing pipes.
 
 One of the differences between MIPS and older assembly languages (e.g. that of the 6502 processor) is the ability to multiply numbers together in hardware. The product of the two selected 32-bit registers is placed into a *pair* of 32-bit integers, since the result may be up to 64 bits wide. This makes finding products a little finicky, but far less so than implementing it in software.
@@ -127,8 +127,8 @@ Many thanks to James Larus, the author of *SPIM*, without which I would have had
 
 **Syntax Highlight**: `$0` (a register that always contains the value 0)
 
-Day 11: Kitten
---------------
+Day 11: [Kitten](https://kittenlang.org)
+----------------------------------------
 It's been a hot minute since I used a con**cat**enative language. Kitten is a bit unusual for such a language. It uses infix arithmetic and supports locally-scoped variables. Its `if-then-else` blocks work in a way that feels quite un-FORTH-like. I made heavy use of local variables in this program, which probably contributes to its slow runtime. I found the presence of Haskell-like algebraic types helpful in some ways (keeping track of number and position of arguments), but the language's lack of integer type casting was very frustrating. Rather than writing functions that could accept any integral type, I hardcoded a lot of `Int64`s.
 
 Speaking of functions, the language's standard library was lacking a handful of common functions that I ended up implementing by hand: `n take` (the first n items of a list), `xs ys f zip_with` (fold a pair of lists together using a given function) and `haystack needle contains` (determine whether an element is present in a list). In addition, I modified some existing functions to work with `Int64` values, rather than the default `Int32` (`map_index_i64`, `replicate_i64`).
@@ -141,8 +141,8 @@ My hasty Python solution for this day's task got me to the 31st place on the lea
 
 **Syntax Highlight**: `\f` (syntax sugar for the anonymous function `{ f }`)
 
-Day 12: Ruby
-------------
+Day 12: [Ruby](https://ruby-lang.org)
+-------------------------------------
 Ruby is a fun little language. Although I haven't used it very much in the past, I feel quite familiar with its syntax because of its similarities with Crystal and Python. (I wonder if I'll regret using it here, instead of on a later day...) One of the reasons I picked Ruby is because I wanted to experiment with the little memoisation pattern that you see in this program. I found a way to use it twice in this solution: once for Part 2 of the problem (for which it's practically mandatory) and one for a little subroutine that creates regular expressions (which can be done without, but cuts the runtime by 30%). I'm not sure that the way I've written and used the Memoised class is very idiomatic of the language -- presumeably it'd be more Ruby-esque to write subclasses that inherit from it, and those subclasses would then solve the problem.
 
 The Ruby interpreter is very slow compared to some of the other languages I've used. My Python implementation of this program takes ~3 seconds, which is just over 10 times faster than my 40-second Ruby solution. Ruby's syntax is nice to work with; but for speed, Crystal would be a much better choice.
@@ -157,7 +157,7 @@ Orion is a LISP-inspired language developed by a high school student. It compile
 
 The language has a very small standard library that exists externally to the language itself. Languages like Noulith and Slouch are so specialised that all of their keywords and functions are baked into the language itself; and Uxntal, while it has the ability to import and combine files, doesn't have a standard library used by every project. Languages like Kitten or Factor, on the other hand, are very small languages with very large standard libraries. Some of the functions that would have been nice to see are `filter`, `append`, `zip-with` (or even `zip`), `member?` and `intersection`. The language's syntax and semantics are far enough from most LISPs that moving another language's library over would require a fair bit of work. (For example `(car (Cons x y))` produces `(Just x)`, rather than `x`.)
 
-Some parts of the language don't seem to be working as intended. One particularly egregious example is functions like `>=`, which seem to confuse the compiled representation. Treating functions as data (e.g. passing them as arguments, returning them from functions) also seems bug-prone. The language lacks keywords like `eval` and `apply` that might otherwise make it flexible enough to address these shortcomings. There seems to be no way to write literal negative integers. The language is also pretty sluggish (although this is nothing special for custom interpreted languages like this one). On the plus side, there is a macro system (although I didn't use it in this solution). Its pattern-matching on `Cons` and `Just` are also pretty cool.
+Some parts of the language don't seem to be working as intended. One particularly egregious example is functions like `>=`, which seem to confuse the compiled representation. Treating functions as data (e.g. passing them as arguments, returning them from functions) also seems a little buggy. The language lacks keywords like `eval` and `apply` that might otherwise make it flexible enough to address these shortcomings. There seems to be no way to write literal negative integers. The language is also pretty sluggish (although this is nothing special for custom interpreted languages like this one). On the plus side, there is a macro system (although I didn't use it in this solution). Its pattern-matching on `Cons` and `Just` are also pretty cool.
 
 I'm glad this language exists -- in fact, I think that every programmer that takes themselves seriously should attempt to create something like this. It was frustrating to work with, though.
 
@@ -165,13 +165,13 @@ I'm glad this language exists -- in fact, I think that every programmer that tak
 
 **Syntax Highlight**: `λ` (or, equivalently, `\`; creates an anonymous function, like the `lambda` keyword in other LISPs)
 
-Day 14: Pascal
---------------
-(Specifically, this is Object Pascal -- the version supported by the Free Pascal compiler.) Pascal certainly feels like an older language. It has pointer types, the ability to allocate or free memory, and a directive to modify the size of an array. Variables used by a procedure or function must be declared before its body. Integer widths can be specified (and indeed gave me a little trouble in Part 2 of this problem). Hash maps are fiddly to set up, unless the types of your keys and values line up with a pre-existing one.
+Day 14: [Pascal](https://freepascal.org)
+----------------------------------------
+(Specifically, this is the version of *Object Pascal* supported by the Free Pascal compiler.) Pascal certainly feels like an older language. It has pointer types, the ability to allocate or free memory, and a directive to modify the size of an array. Variables used by a procedure or function must be declared before its body. Integer widths can be specified (and indeed gave me a little trouble in Part 2 of this problem). Hash maps are fiddly to set up, unless the types of your keys and values line up with a pre-existing one.
 
 On the other hand, it is definitely not a low-level language, *per se*. Memory management doesn't seem to be as intense as in C, for example; and there are abstractions like iterators for `for` loops. Object Pascal also has classes and methods. I can see why this language was popular for teaching programming in the past.
 
-Since the language is older than C, it doesn't use the conventions that became the *de facto* standard post-C. Pointer dereferencing is written `p^`, not `*p`. Blocks are written `begin end;`, not `{ };`. Assignment, equality test and inequality test are `:=`, `=` and `<>` rather than `=`, `==` and `!=` respectively. Pascal was evidently popular enough, though, that amongst languages further away from the C family, many of these syntax conventions have survived to the present day.
+Since the language is older than C, it doesn't use the conventions that became the *de facto* standard post-C. Pointer dereferencing is written `p^`, not `*p`. Blocks are written `begin end`, not `{ }`. Assignment, equality test and inequality test are `:=`, `=` and `<>` rather than `=`, `==` and `!=` respectively. Pascal was evidently popular enough, though, that amongst languages further away from the C family, many of these syntax conventions have survived to the present day.
 
 My Pascal solution to this problem runs quite a bit faster than my Python one. This is probably because it uses an array to lookup obstacles, and doesn't constantly allocate memory to convert the list of rocks to a set for hashing. (Rather, this version simply moves stuff in place and uses a hash function related to the "stress" used to solve the problem.)
 
@@ -179,8 +179,8 @@ My Pascal solution to this problem runs quite a bit faster than my Python one. T
 
 **Syntax Highlight**: `^` (declares or dereferences pointers)
 
-Day 15: x86-64 Assembly
------------------------
+Day 15: [x86-64 Assembly](https://www.nasm.us)
+----------------------------------------------
 This was a tough one. As I mentioned in the Day 10 writeup, one of the conveniences of old, emulated assembly languages is built-in pseudoinstructions that print numbers or characters. In x86, I had no such luxury. I initially tried to use libc's `printf` function. When I couldn't figure out how to get the linker to cooperate, I wrote my own function to print a decimal number instead.
 
 This task, in a nutshell, is "Given *this* specific hash function, implement a hash table with string keys and single-digit positive integer values. It should support insertion, deletion and traversal of its values. Resolve hash collisions by storing each new value at the end of a linked list at each table location." Just about every high-level language seems to have a built-in hash table data structure, so I decided to implement the task in a language that didn't have one. I've implemented hash tables once or twice in C before, and linked lists many more times, but this is my first time doing either one in an assembly language. I also write my own memory allocator, in a sense. Since I wasn't able to figure out libc, my solution doesn't use `malloc`. Instead, it keeps a pool of 4096 cells to use as hash table entries. Each cell contains a flag marking whether it is in use or not, and the allocator simply carries out a linear search through the pool (beginning after the last-allocated cell) until it finds an unused cell. "Freeing" the memory is as easy as zeroing the "in-use" flag.
