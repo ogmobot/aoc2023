@@ -178,3 +178,15 @@ My Pascal solution to this problem runs quite a bit faster than my Python one. T
 **Pascal**: a high-level language from an age of low-level computing.
 
 **Syntax Highlight**: `^` (declares or dereferences pointers)
+
+Day 15: x86-64 Assembly
+-----------------------
+This was a tough one. As I mentioned in the Day 10 writeup, one of the conveniences of old, emulated assembly languages is built-in pseudoinstructions that print numbers or characters. In x86, I had no such luxury. I initially tried to use libc's `printf` function. When I couldn't figure out how to get the linker to cooperate, I wrote my own function to print a decimal number instead.
+
+This task, in a nutshell, is "Given *this* specific hash function, implement a hash table with string keys and single-digit positive integer values. It should support insertion, deletion and traversal of its values. Resolve hash collisions by storing each new value at the end of a linked list at each table location." Just about every high-level language seems to have a built-in hash table data structure, so I decided to implement the task in a language that didn't have one. I've implemented hash tables once or twice in C before, and linked lists many more times, but this is my first time doing either one in an assembly language. I also write my own memory allocator, in a sense. Since I wasn't able to figure out libc, my solution doesn't use `malloc`. Instead, it keeps a pool of 4096 cells to use as hash table entries. Each cell contains a flag marking whether it is in use or not, and the allocator simply carries out a linear search through the pool (beginning after the last-allocated cell) until it finds an unused cell. "Freeing" the memory is as easy as zeroing the "in-use" flag.
+
+The x86-64 instruction set has myriad different instructions, and I didn't end up using all that many of them. I'll bet there's a cleverer way to carry out a lot of this program's logic.
+
+**x86-64**: batteries not included.
+
+**Syntax Highlight**: `mov` (move a value between two registers, or from a register to memory, or from memory to a register; and the memory location can be offset by another register)
