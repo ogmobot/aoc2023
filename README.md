@@ -190,3 +190,15 @@ The x86-64 instruction set has myriad different instructions, and I didn't end u
 **x86-64**: batteries not included.
 
 **Syntax Highlight**: `mov` (move a value between two registers, or from a register to memory, or from memory to a register; and the memory location can be offset by another register)
+
+Day 16: [UF](http://www.call-with-current-continuation.org/uf/uf.html)
+----------------------------------------------------------------------
+This marks the second time I've written a program to run on the [Varvara](https://wiki.xxiivv.com/site/varvara.html) computer system. (I was worried that later tasks might have trouble fitting in memeory, or would require numbers larger than a 16-bit unsigned integer.) This program is probably the most complicated program I've written in a Forth-like language, but perhaps surprisingly, it feels pretty understandable. I've seen Forth described as "the ultimate assembly language", and this program certainly makes it feel that way. In Forth, defining large amounts of small functions is definitely the way to go. It makes the program very readable.
+
+One of the problems I came up against while writing this solution was the native 256-byte size of the Uxn stack. My implementation requires at most 60 pairs of 2-byte cells to sit on a stack (for a total of 240 bytes); and when that was added to the bottom values used by the Forth runtime and the top values used by my functions, it overflowed the native data stack. Hence, my solution allocates memory for an extra stack to store these cells. (It's likely 256 bytes would be enough for this, but it allocates 512 bytes).
+
+UF requires manual memory management. Of course, most short-term variables should be kept on the data stack (or stashed on the return stack); but in a situation like this one, where a large grid must be read from a file, allocating memory makes a lot more sense. The process of allocating memory is certainly very different from C-like language. My current solution hard-codes the size of the input (a 110 by 110 square), but I think I can modify it to detect the input size and allocate memory appropriately.
+
+**UF**: a complete Forth for Varvara.
+
+**Syntax Highlight**: `allot` (allocates an amount of memory for a given variable)
