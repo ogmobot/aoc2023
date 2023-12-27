@@ -1,7 +1,5 @@
 ' noop is prompt
 
- 110 constant GRID_SIZE ( but *in memory*, each row is 111 bytes long )
-    GRID_SIZE dup 1 + * constant FILE_BUFFER_SIZE
   -1 constant SENTINEL
 ( Low nibble of grid cell keeps symbol )
    0 constant S_.
@@ -15,10 +13,18 @@
   32 constant D_>
   64 constant D_^
  128 constant D_v
+
+16384 constant MAX_FILE_SIZE
+( Together, these two buffers use up half of Varvara's available memory )
+create FILE_BUFFER MAX_FILE_SIZE allot
+variable FILE_SIZE
+0 FILE_SIZE !
+create GRID MAX_FILE_SIZE allot
+variable GRID_SIZE
+0 GRID_SIZE !
 ( Grid needs additional top/bottom rows for border, )
 ( plus two corner tiles for beginning and SENTINEL. )
-FILE_BUFFER_SIZE GRID_SIZE dup + + 2 + constant GRID_BUFFER_SIZE
-create GRID GRID_BUFFER_SIZE allot
+
 create EXTENDED_STACK 256 cells allot
 variable XTOP
 EXTENDED_STACK XTOP !
@@ -128,9 +134,9 @@ EXTENDED_STACK XTOP !
             x> 1 -
         else
             dup D_^ = if
-                x> GRID_SIZE 1 + -
-            else
-                x> GRID_SIZE 1 + +
+                x> GRID_SIZE @ 1 + -
+            else ( D_v )
+                x> GRID_SIZE @ 1 + +
             then
         then
     then
@@ -146,14 +152,19 @@ EXTENDED_STACK XTOP !
 ;
 
 : colrow>coord ( col row -- coord )
-    GRID_SIZE 1 + * +
-    GRID GRID_SIZE 1 + + +
+    GRID_SIZE @ 1 + * +
+    GRID GRID_SIZE @ 1 + + +
+;
+
+: grid-first ( -- addr )
+    ( memory location of first "real" symbol in the grid )
+    GRID GRID_SIZE @ 1 + +
 ;
 
 : count-covered-tiles ( -- tile-count )
     0 ( total )
-    GRID_BUFFER_SIZE 0 do
-        GRID i + c@
+    FILE_SIZE @ 0 do
+        grid-first i + c@
         dup SENTINEL 255 and <> if
             dup 15 and S_newline <> if ( bitmask for low nibble )
                 240 and if ( bitmask for high nibble )
@@ -178,10 +189,10 @@ EXTENDED_STACK XTOP !
 
 : reset-grid ( -- )
     ( clears all is-visited? flags )
-    GRID_BUFFER_SIZE 0 do
-        GRID i + c@
+    FILE_SIZE @ 0 do
+        grid-first i + c@
         15 and
-        GRID i + c!
+        grid-first i + c!
     loop
 ;
 
@@ -209,33 +220,49 @@ EXTENDED_STACK XTOP !
     then
 ;
 
+: find-grid-size ( -- )
+    FILE_BUFFER
+    begin
+        1 +
+        dup c@ 10 =
+    until
+    FILE_BUFFER - GRID_SIZE !
+;
+
 : file>grid ( filename -- )
     ( Pads GRID with newlines, appends SENTINEL, )
     ( then loads the contents of file into GRID, )
     ( then translates each char in GRID to a 4-bit constant. )
     filename
-    GRID_BUFFER_SIZE 0 do
-        10 GRID i + c! ( newline )
+    FILE_BUFFER MAX_FILE_SIZE fileread
+    FILE_SIZE !
+
+    find-grid-size
+
+    MAX_FILE_SIZE 0 do
+        S_newline GRID i + c!
     loop
-    GRID GRID_SIZE + 1 + FILE_BUFFER_SIZE fileread
-    drop ( Ignore bytes read and assume successful )
-    GRID_BUFFER_SIZE 0 do
-        GRID i + c@ char>symb
-        GRID i + c!
+    ( copy map from FILE_BUFFER to GRID )
+    0 0 colrow>coord >x
+    FILE_SIZE @ 0 do
+        FILE_BUFFER i + c@ char>symb
+        x> dup >x i + c!
     loop
-    SENTINEL GRID GRID_BUFFER_SIZE + 1 - c!
+    x> drop
+    SENTINEL FILE_SIZE @ GRID_SIZE @ 2 * 2 + + c!
 ;
 
 : print-grid ( -- )
     cr
-    GRID_BUFFER_SIZE 0 do 
+    GRID_SIZE @ 1 + dup 1 + *
+    0 do 
         i GRID + c@
         dup 10 >= if
             drop 35 emit bl emit
         else
             .
         then
-        i 1 + GRID_SIZE 1 + mod 0= if
+        i 1 + GRID_SIZE @ 1 + mod 0= if
             cr
         then
     loop
@@ -251,29 +278,29 @@ EXTENDED_STACK XTOP !
 : part-2 ( -- )
     0
     ( from top row )
-    GRID_SIZE 0 do
+    GRID_SIZE @ 0 do
         D_v i -1 colrow>coord
         trace-from-start
         count-covered-tiles max
         reset-grid
     loop
     ( from bottom row )
-    GRID_SIZE 0 do
-        D_^ i GRID_SIZE colrow>coord
+    GRID_SIZE @ 0 do
+        D_^ i GRID_SIZE @ colrow>coord
         trace-from-start
         count-covered-tiles max
         reset-grid
     loop
     ( from left column )
-    GRID_SIZE 0 do
+    GRID_SIZE @ 0 do
         D_> -1 i colrow>coord
         trace-from-start
         count-covered-tiles max
         reset-grid
     loop
     ( from right column )
-    GRID_SIZE 0 do
-        D_> GRID_SIZE i colrow>coord
+    GRID_SIZE @ 0 do
+        D_> GRID_SIZE @ i colrow>coord
         trace-from-start
         count-covered-tiles max
         reset-grid
@@ -283,6 +310,6 @@ EXTENDED_STACK XTOP !
 " input16.txt" file>grid
 
 part-1 . cr
-part-2 . cr ( takes ~20s )
+part-2 . cr ( takes ~25s )
 
 bye
