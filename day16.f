@@ -5,7 +5,7 @@
   -1 constant SENTINEL
 ( Low nibble of grid cell keeps symbol )
    0 constant S_.
-   1 constant S_backslash
+   1 constant S_\
    2 constant S_/
    3 constant S_-
    4 constant S_|
@@ -52,7 +52,7 @@ EXTENDED_STACK XTOP !
         then
     then
 ;
-: mirrorB ( dir coord -- X: coord dir' )
+: mirror\ ( dir coord -- X: coord dir' )
     >x
     dup D_< = if
         drop D_^ >x
@@ -97,8 +97,8 @@ EXTENDED_STACK XTOP !
     dup S_newline = if
         drop drop drop
     else
-        dup S_backslash = if
-            drop mirrorB
+        dup S_\ = if
+            drop mirror\
         else
             dup S_/ = if
                 drop mirror/
@@ -192,8 +192,8 @@ EXTENDED_STACK XTOP !
         dup 47 = if ( / )
             drop S_/
         else
-            dup 92 = if ( backslash )
-                drop S_backslash
+            dup 92 = if ( \ )
+                drop S_\
             else
                 dup 45 = if ( - )
                     drop S_-
