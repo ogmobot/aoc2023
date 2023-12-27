@@ -236,12 +236,45 @@ variable GRID GRID_BUFFER_SIZE allot
 : part-1 ( -- )
     D_> -1 0 colrow>coord
     trace-from-start
-    count-covered-tiles . cr
+    count-covered-tiles
+    reset-grid
+;
+
+: part-2 ( -- )
+    0
+    ( from top row )
+    GRID_SIZE 0 do
+        D_v i -1 colrow>coord
+        trace-from-start
+        count-covered-tiles max
+        reset-grid
+    loop
+    ( from bottom row )
+    GRID_SIZE 0 do
+        D_^ i GRID_SIZE colrow>coord
+        trace-from-start
+        count-covered-tiles max
+        reset-grid
+    loop
+    ( from left column )
+    GRID_SIZE 0 do
+        D_> -1 i colrow>coord
+        trace-from-start
+        count-covered-tiles max
+        reset-grid
+    loop
+    ( from right column )
+    GRID_SIZE 0 do
+        D_> GRID_SIZE i colrow>coord
+        trace-from-start
+        count-covered-tiles max
+        reset-grid
+    loop
 ;
 
 " input16.txt" file>grid
 
-part-1 ( expect 7060 )
-reset-grid
+part-1 . cr
+part-2 . cr
 
 bye
