@@ -1,6 +1,5 @@
 ' noop is prompt
 
-( 10 constant GRID_SIZE ) ( testing - expect 46 )
  110 constant GRID_SIZE ( but *in memory*, each row is 111 bytes long )
     GRID_SIZE dup 1 + * constant FILE_BUFFER_SIZE
   -1 constant SENTINEL
@@ -10,81 +9,91 @@
    2 constant S_/
    3 constant S_-
    4 constant S_|
-   5 constant S_newline ( This instantly kills the beam )
+   5 constant S_newline ( Beam is destroyed only when it hits this )
 ( High nibble of grid cell keeps direction flags )
   16 constant D_<
   32 constant D_>
   64 constant D_^
  128 constant D_v
 ( Grid needs additional top/bottom rows for border, )
-( plus two corner tiles for beginning and SENTINEL )
+( plus two corner tiles for beginning and SENTINEL. )
 FILE_BUFFER_SIZE GRID_SIZE dup + + 2 + constant GRID_BUFFER_SIZE
-variable GRID GRID_BUFFER_SIZE allot
+create GRID GRID_BUFFER_SIZE allot
+create EXTENDED_STACK 256 cells allot
+variable XTOP
+EXTENDED_STACK XTOP !
 
-: mirror/ ( dir coord -- dir' coord )
-    ( s" mirror/ " type )
-    >r
+: >x ( val -- X: val )
+    ( pushes a cell to EXTENDED_STACK )
+    XTOP @ !
+    XTOP @ 2 + XTOP !
+;
+
+: x> ( X: val -- val )
+    ( pops a cell from EXTENDED_STACK )
+    ( caller must check whether stack is empty )
+    XTOP @ 2 - XTOP !
+    XTOP @ @
+;
+
+: mirror/ ( dir coord -- X: coord dir' )
+    >x
     dup D_< = if
-        drop D_v
+        drop D_v >x
     else
         dup D_> = if
-            drop D_^
+            drop D_^ >x
         else
             D_^ = if
-                D_>
+                D_> >x
             else ( D_v )
-                D_<
+                D_< >x
             then
         then
     then
-    r>
 ;
-: mirrorB ( dir coord -- dir' coord )
-    ( s" mirrorB " type )
-    >r
+: mirrorB ( dir coord -- X: coord dir' )
+    >x
     dup D_< = if
-        drop D_^
+        drop D_^ >x
     else
         dup D_> = if
-            drop D_v
+            drop D_v >x
         else
             D_^ = if
-                D_<
+                D_< >x
             else ( D_v )
-                D_>
+                D_> >x
             then
         then
     then
-    r>
 ;
-: splitter- ( dir coord -- dir' coord [dir" coord] )
+: splitter- ( dir coord -- X: coord dir' [coord dir''] )
     >r
     dup D_< = over D_> = or if
         ( Don't change direction or coord )
-        ( s" [splitter-] " type )
-        r>
+        r> >x >x
     else
-        ( s" splitter- " type )
         drop
-        D_< r>
-        D_> over
+        r> dup
+        >x D_< >x
+        >x D_> >x
     then
 ;
-: splitter| ( dir coord -- dir' coord [dir" coord] )
+: splitter| ( dir coord -- X: coord dir' [coord dir''] )
     >r
     dup D_^ = over D_v = or if
         ( Don't change direction or coord )
-        ( s" [splitter-] " type )
-        r>
+        r> >x >x
     else
-        ( s" splitter| " type )
         drop
-        D_^ r>
-        D_v over
+        r> dup
+        >x D_^ >x
+        >x D_v >x
     then
 ;
 
-: interact ( dir coord symbol -- [dir' coord [dir" coord]] )
+: interact ( dir coord symbol -- X: [coord' dir' [coord'' dir'']] )
     dup S_newline = if
         drop drop drop
     else
@@ -101,6 +110,7 @@ variable GRID GRID_BUFFER_SIZE allot
                         splitter|
                     else
                         ( empty space: do nothing )
+                        >x >x
                     then
                 then
             then
@@ -108,20 +118,19 @@ variable GRID GRID_BUFFER_SIZE allot
     then
 ;
 
-: move-top-beam ( dir coord -- [dir' coord' [dir" coord']] )
+: move-top-beam ( X: coord dir -- X: [coord' dir' [coord" dir"]] )
     ( If top beam moves into a newline, it is destroyed )
-    ( 2dup . . )
-    >r
+    x>
     dup D_> = if
-        r> 1 +
+        x> 1 +
     else
         dup D_< = if
-            r> 1 -
+            x> 1 -
         else
             dup D_^ = if
-                r> GRID_SIZE 1 + -
+                x> GRID_SIZE 1 + -
             else
-                r> GRID_SIZE 1 + +
+                x> GRID_SIZE 1 + +
             then
         then
     then
@@ -160,12 +169,11 @@ variable GRID GRID_BUFFER_SIZE allot
 ;
 
 : trace-from-start ( dir coord -- )
-    >r >r SENTINEL r> r>
+    >x >x
     begin
         move-top-beam
-        dup SENTINEL =
+        XTOP @ EXTENDED_STACK =
     until
-    drop
 ;
 
 : reset-grid ( -- )
@@ -190,8 +198,8 @@ variable GRID GRID_BUFFER_SIZE allot
                 dup 45 = if ( - )
                     drop S_-
                 else
-                    dup 124 = if ( | )
-                        drop S_|
+                    124 = if ( | )
+                        S_|
                     else
                         S_newline
                     then
@@ -275,6 +283,6 @@ variable GRID GRID_BUFFER_SIZE allot
 " input16.txt" file>grid
 
 part-1 . cr
-part-2 . cr
+part-2 . cr ( takes ~20s )
 
 bye
