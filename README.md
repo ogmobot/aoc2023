@@ -202,3 +202,15 @@ UF requires manual memory management. Of course, most short-term variables shoul
 **UF**: a complete Forth for Varvara.
 
 **Syntax Highlight**: `allot` (allocates an amount of memory for a given variable)
+
+Day 17: [Standard ML](https://www.smlnj.org)
+--------------------------------------------
+(There are a few different implementations of Standard ML; I used the New Jersey one.) Standard ML, like OCaml and Haskell, is a very functional language. It's my understanding that it's possible to make mutable data structures, in Standard ML, but my solution ended up using only immutable ones (except for TextIO.inStream). The language is very similar to OCaml, of course, and it's a lot less pedantic than Haskell. The type-checking was very helpful for debugging.
+
+I used the New Jersey implementation because it is supposed to have quite a large standard library, but I didn't end up using much of it! I had initially planned to represent the grid as a hash map (of coordinates to values), but I instead used a list of lists; and I implemented my own priority queue when I couldn't figure out how to set up the library one. This was my first time setting up a priority queue that wasn't a binary heap -- it seemed like an easier option in this context.
+
+My first attempt to solve this problem used naive bread-first and depth-first searches, but after running them for a few hours, I decided to figure out the priority queue option instead. I like to think I learned something in setting up the leftist heap.
+
+**Standard ML**: an elegant functional language (that isn't too fussy).
+
+**Syntax Highlight**: `o` (composes two functions together)
