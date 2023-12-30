@@ -7,22 +7,41 @@ type SearchNode = {
 } ;
 datatype 'a Leftist =
     empty
-  | node of 'a * 'a Leftist * 'a Leftist ;
+  | treeNode of 'a * 'a Leftist * 'a Leftist ;
 
 val sum = foldl op+ 0 ;
 val maxInt = Option.valOf Int.maxInt ;
 
-(* TODO: implement pushPQ and popPQ using Leftist trees *)
-fun pushPQ lessThan = let
-    fun push (empty, item) = node (item, empty, empty)
-      | push (node (root, ltree, rtree), item) = let
-        in
-            (* FIXME *)
-            node (item, empty, empty)
-        end ;
-in
-    push
-end
+fun treeRank empty = 0
+  | treeRank (treeNode(_, _, r)) = treeRank r + 1 ;
+
+fun mergeTrees (_, left,  empty) = left
+  | mergeTrees (_, empty, right) = right
+  | mergeTrees (lessThan, left,  right) = let
+        val (treeNode(lroot, subleft, subright)) = left ;
+        val (treeNode(rroot, _, _)) = right ;
+    in
+        if (lessThan (rroot, lroot)) then
+            mergeTrees (lessThan, right, left)
+        else
+            let
+                val subtree = mergeTrees (lessThan, right, subright) ;
+            in
+                if (treeRank subtree) > (treeRank subleft) then
+                    treeNode(lroot, subtree, subleft)
+                else
+                    treeNode(lroot, subleft, subtree)
+            end
+    end ;
+
+fun pushPQ (lessThan, mainTree, item) = mergeTrees (
+    lessThan,
+    treeNode(item, empty, empty),
+    mainTree
+) ;
+
+fun lowerCost ({pos=_, cost=a, facing=_}, {pos=_, cost=b, facing=_}) =
+    a < b ;
 
 (* This isn't exhaustive -- there's no pattern for replaceAt([], _, _). *)
 fun replaceAt (x :: xs, n, y) = case n of
@@ -93,12 +112,11 @@ in
 end ;
 
 fun findBestPath (minMove : int, maxMove : int) =
-    (* This Djikstra-ish process currently uses DFS *)
-    (* TODO use priority queue*)
     fn (grid : int list list, start : RowCol, dest : RowCol) => let
         fun search (toSearch, distances) = case toSearch of
-            [] => foldl Int.min maxInt (gridAt (distances, dest))
-          | this :: q => let
+            empty => foldl Int.min maxInt (gridAt (distances, dest))
+          | treeNode(this, qleft, qright) => let
+                val q = mergeTrees (lowerCost, qleft, qright) ;
                 val {pos=thispos, cost=thiscost, facing=thisfacing} = this ;
                 val dIndex = case thisfacing of
                     horizontal => 0
@@ -115,15 +133,25 @@ fun findBestPath (minMove : int, maxMove : int) =
                         val newDists =
                             setDist (distances, thispos, dIndex, thiscost) ;
                         val adjs = getAdj (grid, this, minMove, maxMove) ;
+                        val qAdjs = (foldl
+                            (fn (item, tree) => mergeTrees (
+                                lowerCost,
+                                tree,
+                                treeNode(item, empty, empty)))
+                            q
+                            adjs
+                        ) ;
                     in
-                        search (q @ adjs, newDists)
+                        search (qAdjs, newDists)
                     end
-            end
-    in
-        search ([
+            end ;
+        val initToSearch = treeNode(
             {pos=start, cost=0, facing=horizontal},
-            {pos=start, cost=0, facing=vertical}
-        ], (
+            (treeNode({pos=start, cost=0, facing=vertical}, empty, empty)),
+            empty
+        ) ;
+    in
+        search (initToSearch, (
             List.map (List.map (fn _ => [maxInt, maxInt])) grid
         ))
     end ;
@@ -139,11 +167,9 @@ fun main filename = let
     val part1 = findBestPath (1,  3) params ;
     val part2 = findBestPath (4, 10) params ;
 in
-    (* Non-priority queue takes > 15 min *)
+    (* Takes ~16s *)
     Format.formatf "%d\n" print [Format.INT part1] ;
     Format.formatf "%d\n" print [Format.INT part2]
-    (* Expect 1004 and 1171 *)
-    (* Example: 102 and 94 *)
 end ;
 
-main "input17.test" ;
+main "input17.txt" ;
