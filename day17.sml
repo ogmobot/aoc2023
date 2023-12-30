@@ -5,9 +5,24 @@ type SearchNode = {
     cost: int,
     facing: Direction
 } ;
+datatype 'a Leftist =
+    empty
+  | node of 'a * 'a Leftist * 'a Leftist ;
 
 val sum = foldl op+ 0 ;
 val maxInt = Option.valOf Int.maxInt ;
+
+(* TODO: implement pushPQ and popPQ using Leftist trees *)
+fun pushPQ lessThan = let
+    fun push (empty, item) = node (item, empty, empty)
+      | push (node (root, ltree, rtree), item) = let
+        in
+            (* FIXME *)
+            node (item, empty, empty)
+        end ;
+in
+    push
+end
 
 (* This isn't exhaustive -- there's no pattern for replaceAt([], _, _). *)
 fun replaceAt (x :: xs, n, y) = case n of
@@ -83,15 +98,14 @@ fun findBestPath (minMove : int, maxMove : int) =
     fn (grid : int list list, start : RowCol, dest : RowCol) => let
         fun search (toSearch, distances) = case toSearch of
             [] => foldl Int.min maxInt (gridAt (distances, dest))
-          | {pos=thispos, cost=thiscost, facing=thisfacing} :: q => let
+          | this :: q => let
+                val {pos=thispos, cost=thiscost, facing=thisfacing} = this ;
                 val dIndex = case thisfacing of
                     horizontal => 0
                   | vertical   => 1 ;
                 val currBest = List.nth (
                     (gridAt (distances, thispos)), dIndex
                 ) ;
-                (* What the new grid will look like IFF this is the
-                   best way to reach thispos *)
             in
                 if (currBest <= thiscost) then
                     (* Drop this node *)
@@ -100,22 +114,15 @@ fun findBestPath (minMove : int, maxMove : int) =
                     let
                         val newDists =
                             setDist (distances, thispos, dIndex, thiscost) ;
-                        val adjs = getAdj (
-                            grid, {
-                                pos=thispos,
-                                cost=thiscost,
-                                facing=thisfacing
-                            },
-                            minMove, maxMove
-                        ) ;
+                        val adjs = getAdj (grid, this, minMove, maxMove) ;
                     in
-                        search (adjs @ q, newDists)
+                        search (q @ adjs, newDists)
                     end
             end
     in
         search ([
             {pos=start, cost=0, facing=horizontal},
-            {pos=start, cost=0, facing=horizontal}
+            {pos=start, cost=0, facing=vertical}
         ], (
             List.map (List.map (fn _ => [maxInt, maxInt])) grid
         ))
@@ -132,7 +139,7 @@ fun main filename = let
     val part1 = findBestPath (1,  3) params ;
     val part2 = findBestPath (4, 10) params ;
 in
-    (* Non-priority queue takes too long *)
+    (* Non-priority queue takes > 15 min *)
     Format.formatf "%d\n" print [Format.INT part1] ;
     Format.formatf "%d\n" print [Format.INT part2]
     (* Expect 1004 and 1171 *)
