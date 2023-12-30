@@ -34,12 +34,6 @@ fun mergeTrees (_, left,  empty) = left
             end
     end ;
 
-fun pushPQ (lessThan, mainTree, item) = mergeTrees (
-    lessThan,
-    treeNode(item, empty, empty),
-    mainTree
-) ;
-
 fun lowerCost ({pos=_, cost=a, facing=_}, {pos=_, cost=b, facing=_}) =
     a < b ;
 
@@ -133,14 +127,12 @@ fun findBestPath (minMove : int, maxMove : int) =
                         val newDists =
                             setDist (distances, thispos, dIndex, thiscost) ;
                         val adjs = getAdj (grid, this, minMove, maxMove) ;
-                        val qAdjs = (foldl
-                            (fn (item, tree) => mergeTrees (
-                                lowerCost,
-                                tree,
-                                treeNode(item, empty, empty)))
-                            q
-                            adjs
+                        fun pushPQ (item, mainTree) = mergeTrees (
+                            lowerCost,
+                            treeNode(item, empty, empty),
+                            mainTree
                         ) ;
+                        val qAdjs = foldl pushPQ q adjs ;
                     in
                         search (qAdjs, newDists)
                     end
