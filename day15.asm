@@ -23,13 +23,11 @@
 %define CELL_IN_USE     0x80    ; (bit flag)
 
     global _start
-
     section .text
 
 printd_newline:
     ; Prints the value in rdi (at most 7 digits).
     ; Mangles rax, rcx, rdx, r10, output_buffer.
-    ; Segfaults if trying to print something longer than 7 digits!
     mov rax, 0x0a30202020202020 ; "      0\n", no null
     mov [output_buffer], rax
     mov rcx, output_buffer + 6 ; write bytes to here
@@ -457,12 +455,13 @@ _start:
 
     section .data
 
-first_empty_cell:
-    dq 0
-output_buffer:
-    times 8 db 0
+; Hash table keys (strings) stored here for table lookup
+; If printd_newline attempts to write more than 7 digits, it will
+; mangle this buffer (but won't segfault)
 hashkeybuffer:
     times 16 db 0
+output_buffer:
+    times 8 db 0
 
 input_file_name:
     db "input15.txt", 0
@@ -476,6 +475,8 @@ hash_table:
 ht_cells_loc:
     dq 0
 ht_cells_end:
+    dq 0
+first_empty_cell:
     dq 0
 
     ; ht_cells_loc points to a pool of "ht" cells, each consisting of
