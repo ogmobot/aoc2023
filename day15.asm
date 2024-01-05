@@ -8,14 +8,13 @@
 %define SYSCALL_MMAP       9
 %define SYSCALL_MUNMAP    11
 %define SYSCALL_EXIT      60
-%define PROT_READ          1
-%define PROT_WRITE         2
-%define MAP_SHARED      0x01
+%define PROT_READ       0x01
+%define PROT_WRITE      0x02
 %define MAP_PRIVATE     0x02
 %define MAP_ANONYMOUS   0x20
 %define MAX_FILE_SIZE 0x6000    ; (in bytes)
 %define TABLE_ROWS    0x0100    ; (stipulated by problem)
-%define MAX_CELLS     0x0200
+%define MAX_CELLS     0x0400
 %define CELL_SIZE         16    ; (in bytes)
 %define POOL_SIZE (MAX_CELLS * CELL_SIZE)
 ;%define CELL_KEY_OFFSET    0
@@ -91,20 +90,32 @@ load_file:
     ; fd in rax
 
     mov rdi, rax
-    ; save rdi to the stack, just in case READ modifies it
+    ; save rdi to the stack since MMAP needs that register
     sub rsp, 8
     push rdi
 
-    mov rax, SYSCALL_READ
-    mov rsi, file_contents
-    mov rdx, MAX_FILE_SIZE
+    mov  r8, rax ; fd
+    mov rax, SYSCALL_MMAP
+    mov rdi, 0 ; address (let OS choose a page-aligned boundary)
+    mov rsi, MAX_FILE_SIZE ; length
+    mov rdx, PROT_READ ; protection
+    mov r10, MAP_PRIVATE ; flags
+    mov  r9, 0 ; offset
     syscall
+    mov [file_contents_loc], rax
 
     pop rdi
     add rsp, 8
 
     ; fd already in rdi
     mov rax, SYSCALL_CLOSE
+    syscall ; can still used mapped memory after file is closed
+    ret
+
+unload_file:
+    mov rax, SYSCALL_MUNMAP
+    mov rdi, [file_contents_loc]
+    mov rsi, MAX_FILE_SIZE
     syscall
     ret
 
@@ -153,6 +164,7 @@ create_cell:
     ; sil is a byte containing value
 
     ; Find first empty cell
+    ; (Or loop forever if all cells in use)
     mov rax, [first_empty_cell]
     sub rax, CELL_SIZE
 cc_find_unused:
@@ -330,7 +342,7 @@ solve_p1:
     push rbx
     push r12
 
-    mov rbx, file_contents
+    mov rbx, [file_contents_loc]
     mov rax, hashkeybuffer
     mov r12, 0
 p1_next_char:
@@ -376,7 +388,7 @@ solve_p2:
     sub rsp, 8
     push rbx
 
-    mov rbx, file_contents
+    mov rbx, [file_contents_loc]
     mov rdi, hashkeybuffer
 
 p2_next_char:
@@ -438,6 +450,7 @@ _start:
     call solve_p2
 
     call deallocate_memory_pool
+    call unload_file
     mov rax, SYSCALL_EXIT
     mov rdi, 0 ; exit code
     syscall
@@ -453,8 +466,8 @@ hashkeybuffer:
 
 input_file_name:
     db "input15.txt", 0
-file_contents:
-    times MAX_FILE_SIZE db 0
+file_contents_loc:
+    dq 0
 
 hash_table:
     ; Each element of the table is a dummy cell with a raw pointer to
