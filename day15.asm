@@ -8,10 +8,16 @@
 %define SYSCALL_MMAP       9
 %define SYSCALL_MUNMAP    11
 %define SYSCALL_EXIT      60
+%define PROT_READ          1
+%define PROT_WRITE         2
+%define MAP_SHARED      0x01
+%define MAP_PRIVATE     0x02
+%define MAP_ANONYMOUS   0x20
 %define MAX_FILE_SIZE 0x6000    ; (in bytes)
-%define TABLE_SIZE     0x100    ; (in cells)
-%define MAX_CELLS     0x0180
+%define TABLE_ROWS    0x0100    ; (stipulated by problem)
+%define MAX_CELLS     0x0200
 %define CELL_SIZE         16    ; (in bytes)
+%define POOL_SIZE (MAX_CELLS * CELL_SIZE)
 ;%define CELL_KEY_OFFSET    0
 %define CELL_VAL_OFFSET    7
 %define CELL_PTR_OFFSET    8
@@ -24,6 +30,7 @@
 printd_newline:
     ; Prints the value in rdi (at most 7 digits).
     ; Mangles rax, rcx, rdx, r10, output_buffer.
+    ; Segfaults if trying to print something longer than 7 digits!
     mov rax, 0x0a30202020202020 ; "      0\n", no null
     mov [output_buffer], rax
     mov rcx, output_buffer + 6 ; write bytes to here
@@ -49,38 +56,29 @@ pdn_done:
     syscall
     ret
 
-allocate_memory:
+allocate_memory_pool:
     ; rsi must contain length of desired allocation
     ; sets rax to point to allocated memory
     mov rax, SYSCALL_MMAP
-    mov rdi, 0 ; address (let OS choose)
-    ; rsi stores length
-    mov rdx, 0 ; prot (TODO set to PROT_READ | PROT_WRITE)
-    mov r10, 0 ; flags (TODO set to MAP_PRIVATE)
-    mov  r8, 0 ; fd (FIXME what does this need to be?)
-    mov  r9, 0 ; offset 
+    mov rdi, 0 ; address (let OS choose a page-aligned boundary)
+    mov rsi, POOL_SIZE ; length
+    mov rdx, (PROT_READ | PROT_WRITE) ; protection
+    mov r10, (MAP_PRIVATE | MAP_ANONYMOUS) ; flags
+    mov  r8, 0 ; fd (not backed by a file)
+    mov  r9, 0 ; offset (N/A, since not backed by file)
     syscall
-    ret
-
-allocate_memory_pool:
-    mov qword rsi, (CELL_SIZE * MAX_CELLS)
-    call allocate_memory
     mov [ht_cells_loc], rax
-    add qword rax, (CELL_SIZE * MAX_CELLS)
+    mov [first_empty_cell], rax
+    add qword rax, POOL_SIZE
     mov [ht_cells_end], rax
     ret
 
 deallocate_memory_pool:
     mov rax, SYSCALL_MUNMAP
     mov rdi, [ht_cells_loc]
-    mov rsi, (CELL_SIZE * MAX_CELLS)
+    mov rsi, POOL_SIZE
     syscall
     ret
-
-allocate_file_space:
-    ; TODO
-deallocate_file_space:
-    ; TODO
 
 load_file:
     ; Uses the open, read and close syscalls to load a file into
@@ -161,7 +159,7 @@ cc_find_unused:
     add rax, CELL_SIZE
     cmp rax, [ht_cells_end]
     jne cc_dont_reset_rax
-    mov rax, ht_cells
+    mov rax, [ht_cells_loc]
 cc_dont_reset_rax:
     mov byte cl, [rax + CELL_VAL_OFFSET]
     test byte cl, CELL_IN_USE
@@ -298,7 +296,7 @@ evaluate_table:
 et_next_row:
     mov rdx, 0
     mov rax, rcx
-    cmp rcx, TABLE_SIZE
+    cmp rcx, TABLE_ROWS
     je et_done
     inc rcx
     ; multiply rax by CELL_SIZE and add offset
@@ -432,13 +430,14 @@ p2_done:
     ret
 
 _start:
-    ; call allocate_memory_pool
+    call allocate_memory_pool
     mov rdi, input_file_name
     call load_file
 
     call solve_p1
     call solve_p2
 
+    call deallocate_memory_pool
     mov rax, SYSCALL_EXIT
     mov rdi, 0 ; exit code
     syscall
@@ -446,7 +445,7 @@ _start:
     section .data
 
 first_empty_cell:
-    dq ht_cells
+    dq 0
 output_buffer:
     times 8 db 0
 hashkeybuffer:
@@ -460,13 +459,13 @@ file_contents:
 hash_table:
     ; Each element of the table is a dummy cell with a raw pointer to
     ; a linked list
-    times (CELL_SIZE * TABLE_SIZE) db 0
+    times (CELL_SIZE * TABLE_ROWS) db 0
 ht_cells_loc:
-    dq ht_cells
+    dq 0
 ht_cells_end:
-    dq ht_cells + (MAX_CELLS * CELL_SIZE)
-ht_cells:
-    ; This is a pool of "ht" cells, each consisting of
+    dq 0
+
+    ; ht_cells_loc points to a pool of "ht" cells, each consisting of
     ; - 1 bit flag for whether this cell is in use (1=yes, 0=no)
     ; - 7-byte string identifier (\0 must appear at or before 7th byte)
     ; - 7-bit unsigned numerical value (0-127) (actually 0-9)
@@ -485,4 +484,3 @@ ht_cells:
     ;   iterate through memory_pool (16 bytes at a time)
     ;   until a cell with non-zero 8th byte is found and
     ;   set that one up.
-    times (CELL_SIZE * MAX_CELLS) db 0
