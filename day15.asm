@@ -5,10 +5,12 @@
 %define SYSCALL_WRITE      1
 %define SYSCALL_OPEN       2
 %define SYSCALL_CLOSE      3
+%define SYSCALL_MMAP       9
+%define SYSCALL_MUNMAP    11
 %define SYSCALL_EXIT      60
 %define MAX_FILE_SIZE 0x6000    ; (in bytes)
 %define TABLE_SIZE     0x100    ; (in cells)
-%define MAX_CELLS     0x1000
+%define MAX_CELLS     0x0180
 %define CELL_SIZE         16    ; (in bytes)
 ;%define CELL_KEY_OFFSET    0
 %define CELL_VAL_OFFSET    7
@@ -46,6 +48,39 @@ pdn_done:
     mov rdx, 8 ; message length
     syscall
     ret
+
+allocate_memory:
+    ; rsi must contain length of desired allocation
+    ; sets rax to point to allocated memory
+    mov rax, SYSCALL_MMAP
+    mov rdi, 0 ; address (let OS choose)
+    ; rsi stores length
+    mov rdx, 0 ; prot (TODO set to PROT_READ | PROT_WRITE)
+    mov r10, 0 ; flags (TODO set to MAP_PRIVATE)
+    mov  r8, 0 ; fd (FIXME what does this need to be?)
+    mov  r9, 0 ; offset 
+    syscall
+    ret
+
+allocate_memory_pool:
+    mov qword rsi, (CELL_SIZE * MAX_CELLS)
+    call allocate_memory
+    mov [ht_cells_loc], rax
+    add qword rax, (CELL_SIZE * MAX_CELLS)
+    mov [ht_cells_end], rax
+    ret
+
+deallocate_memory_pool:
+    mov rax, SYSCALL_MUNMAP
+    mov rdi, [ht_cells_loc]
+    mov rsi, (CELL_SIZE * MAX_CELLS)
+    syscall
+    ret
+
+allocate_file_space:
+    ; TODO
+deallocate_file_space:
+    ; TODO
 
 load_file:
     ; Uses the open, read and close syscalls to load a file into
@@ -124,7 +159,7 @@ create_cell:
     sub rax, CELL_SIZE
 cc_find_unused:
     add rax, CELL_SIZE
-    cmp rax, ht_cell_limit
+    cmp rax, [ht_cells_end]
     jne cc_dont_reset_rax
     mov rax, ht_cells
 cc_dont_reset_rax:
@@ -397,6 +432,7 @@ p2_done:
     ret
 
 _start:
+    ; call allocate_memory_pool
     mov rdi, input_file_name
     call load_file
 
@@ -425,6 +461,10 @@ hash_table:
     ; Each element of the table is a dummy cell with a raw pointer to
     ; a linked list
     times (CELL_SIZE * TABLE_SIZE) db 0
+ht_cells_loc:
+    dq ht_cells
+ht_cells_end:
+    dq ht_cells + (MAX_CELLS * CELL_SIZE)
 ht_cells:
     ; This is a pool of "ht" cells, each consisting of
     ; - 1 bit flag for whether this cell is in use (1=yes, 0=no)
@@ -446,4 +486,3 @@ ht_cells:
     ;   until a cell with non-zero 8th byte is found and
     ;   set that one up.
     times (CELL_SIZE * MAX_CELLS) db 0
-ht_cell_limit:
