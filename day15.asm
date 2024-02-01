@@ -1,7 +1,6 @@
 ; Compile and link with
 ;   nasm <this>.asm -f elf64 -o <object>.o ; ld <object>.o -o <binary>
 
-%define SYSCALL_READ       0
 %define SYSCALL_WRITE      1
 %define SYSCALL_OPEN       2
 %define SYSCALL_CLOSE      3
@@ -17,7 +16,7 @@
 %define MAX_CELLS     0x0400
 %define CELL_SIZE         16    ; (in bytes)
 %define POOL_SIZE (MAX_CELLS * CELL_SIZE)
-;%define CELL_KEY_OFFSET    0
+%define CELL_KEY_OFFSET    0
 %define CELL_VAL_OFFSET    7
 %define CELL_PTR_OFFSET    8
 %define CELL_IN_USE     0x80    ; (bit flag)
@@ -86,9 +85,7 @@ load_file:
     mov rdx, 0 ; mode
     syscall
     ; fd in rax
-
-    mov rdi, rax
-    ; save rdi to the stack since MMAP needs that register
+    ; push it onto the stack for later
     sub rsp, 8
     push rdi
 
@@ -102,10 +99,10 @@ load_file:
     syscall
     mov [file_contents_loc], rax
 
+    ; pull fd from stack into appropriate register
     pop rdi
     add rsp, 8
 
-    ; fd already in rdi
     mov rax, SYSCALL_CLOSE
     syscall ; can still used mapped memory after file is closed
     ret
@@ -211,8 +208,8 @@ insert_into_table:
     push rsi        ; so we can restore sil
     push rbx        ; must be pushed last so we can pop it later
 
-    ;mov rdi, [rsp+16]  ; restore rdi = key^
-    ;mov rsi, [rsp+8]  ; restore sil = val
+    ;mov rdi, [rsp + 16]  ; restore rdi = key^ (from stack)
+    ;mov rsi, [rsp + 8]  ; restore sil = val (from stack)
 
     call get_hash ; shouldn't touch rsi or rdi
     ; Move al to ah, so that ax is 16 * al = CELL_SIZE * hash,
@@ -234,13 +231,13 @@ iit_test_key:
 
 iit_append:
     ; rdi still points to key, in theory
-    mov rsi, [rsp+8]  ; restore sil = val
+    mov rsi, [rsp + 8]  ; restore sil = val (from stack)
     call create_cell
     mov qword [rbx + CELL_PTR_OFFSET], rax
     jmp iit_done
 
 iit_overwrite:
-    mov rsi, [rsp + 8]  ; restore sil = val
+    mov rsi, [rsp + 8]  ; restore sil = val (from stack)
     or byte sil, CELL_IN_USE
     mov byte [rbx + CELL_VAL_OFFSET], sil
 
