@@ -1,0 +1,149 @@
+use file
+
+// WTF is this language
+// Build process: sacalon ./<this> ; mv <make a guess> <binary> ; ./<binary>
+
+struct linedata {
+    var amount : int64 = 0
+    var direction : int = 0 // 0, 1, 2, 3
+}
+
+struct accumulator {
+    var last_x : int64 = 0
+    var last_y : int64 = 0
+    var this_x : int64 = 0
+    var this_y : int64 = 0
+    var perimeter : int64 = 0
+    var sum_of_terms : int64 = 0 // may be negative!
+}
+
+function abs_i64(x:int64) : int64 {
+    if x < 0 { return -x }
+    return x
+}
+
+function split_string(text:string, delim:char) : [string] {
+    var index : int = 0
+    var substring : string = ""
+    var res : [string] = ["DUMMY"] // Can't declare empty list of string
+    while index < len(text) {
+        if text[index] == delim {
+            if res[0] == "DUMMY" {
+                res[0] = substring
+            } else {
+                append(res, substring)
+            }
+            substring = ""
+        } else {
+            substring = substring + text[index]
+        }
+        index = index + 1
+    }
+    if len(substring) > 0 {
+        append(res, substring)
+    }
+    return res
+}
+
+function file_to_lines(filename:string) : [string] {
+    var file_contents = read_file(filename)
+    return split_string(file_contents, '\n')
+}
+
+function stoi_p1(text:string) : int {
+    // Only works with unsigned base-10 numbers
+    var index = 0
+    var acc = 0
+    while index < len(text) {
+        acc = acc * 10
+        acc = acc + (text[index] - 48)
+        index = index + 1
+    }
+    return acc
+}
+
+function ctoi_p2(text:string) : int {
+    // Given a colour string "(#c84210)", reads five characters
+    // (ignoring the last) and converts them from hex to int
+    var index = 2
+    var acc = 0
+    while index < 7 {
+        acc = acc * 16
+        if text[index] >= 'a' {
+            acc = acc + (text[index] - 'a' + 10)
+        } else {
+            acc = acc + (text[index] - 48)
+        }
+        index = index + 1
+    }
+    return acc
+}
+
+function decode_p1(line:string) : linedata {
+    // Extracts a direction and magnitude from the string
+    // R = 0, D = 1, L = 2, U = 3
+    var res : linedata = linedata(0, 0)
+    var words = split_string(line, ' ')
+    res.amount = stoi_p1(words[1])
+    if words[0] == "R" { res.direction = 0 }
+    if words[0] == "D" { res.direction = 1 }
+    if words[0] == "L" { res.direction = 2 }
+    if words[0] == "U" { res.direction = 3 }
+    return res
+}
+
+function decode_p2(line:string) : linedata {
+    // Extracts a direction and magnitude from the "colour" part of the string
+    var res : linedata = linedata(0, 0)
+    var words = split_string(line, ' ')
+    var colour = words[2]
+    res.amount = ctoi_p2(colour)
+    res.direction = colour[7] - 48 // lol
+    return res
+}
+
+function juryrig_reduce(data:linedata, acc:accumulator) : accumulator {
+    // Use the shoelace formula by keeping a running sum of the terms.
+    // This requires us to keep track of the last-seen x and y values.
+    // While we're at it, keep track of the perimeter, too.
+    // (Since x1 = 0 and y1 = 0, there's no need
+    // to add (xn.y1 - x1.yn) to the sum_of_terms)
+    acc.last_x = acc.this_x
+    acc.last_y = acc.this_y
+
+    var delta_x : int64 = 0
+    var delta_y : int64 = 0
+    // R = 0, D = 1, L = 2, U = 3
+    if data.direction == 0 { delta_x = data.amount }
+    if data.direction == 1 { delta_y = data.amount }
+    if data.direction == 2 { delta_x = -data.amount }
+    if data.direction == 3 { delta_y = -data.amount }
+    acc.this_x = acc.last_x + delta_x
+    acc.this_y = acc.last_y + delta_y
+
+    acc.perimeter = acc.perimeter + data.amount
+    acc.sum_of_terms = acc.sum_of_terms + (acc.this_x * acc.last_y)
+    acc.sum_of_terms = acc.sum_of_terms - (acc.last_x * acc.this_y)
+    return acc
+}
+
+function acc_to_answer(acc:accumulator) : int64 {
+    return (abs_i64(acc.sum_of_terms) + acc.perimeter) / 2 + 1
+}
+
+function main(): int {
+    var lines = file_to_lines("input18.txt")
+    // Part 1
+    var acc = accumulator(0, 0, 0, 0, 0, 0)
+    for line in lines {
+        acc = juryrig_reduce(decode_p1(line), acc)
+    }
+    print(acc_to_answer(acc))
+    // Part 2
+    acc = accumulator(0, 0, 0, 0, 0, 0)
+    for line in lines {
+        acc = juryrig_reduce(decode_p2(line), acc)
+    }
+    print(acc_to_answer(acc))
+    return 0
+}
