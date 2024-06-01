@@ -214,3 +214,23 @@ My first attempt to solve this problem used naive bread-first and depth-first se
 **Standard ML**: an elegant functional language (that isn't too fussy).
 
 **Syntax Highlight**: `o` (composes two functions together)
+
+Day 18: [Sacalon](https://sacalon.github.io)
+--------------------------------------------
+There's nothing offensive about this language's syntax, but it was a little frustrating to use. This is not the first time I've attempted to use the language, but my prior attempt was foiled because I couldn't get pointers to structures to cooperate. I've avoided those in this solution.
+
+I have many gripes with the process of using Sacalon. Let's start with the installation process. The installation instructions refer to a script called `sacalon.sh` that carries out the build/install process, but the actual script is named `install.sh`. It checks and installs dependencies (reporting they "where" installed), runs `make`, then attempts to copy the resulting binary directly into the `/usr/bin` directory. When I denied this request, the script carried on oblivious, reporting "Added Sacalon to path". (Bold of you to assume my `$PATH` contains `/usr/bin`!)
+
+Next, let's look at the libraries and examples. Until late in 2023, the language was known as "Hascal". The name change was a good idea, since the top web search result was usually, "did you mean _Haskell_ programming language?" Unfortunately, many of the examples contained within the distribution still refer to Hascal. The amount of Sacalon in the language's standard library is minimal. Much of it consists of calling functions from C++'s standard library. There's nothing wrong with this, really, except that a lot of the functions I tried to use didn't work. The `abs` function from the `math` module didn't want to convert my `int64`. (Is it because the type signature is float -> float?) The `conv` module didn't want to convert numeric strings to integers. (Is there a difference between Sacalon-style strings and C-style strings?) I wrote my own version of these instead.
+
+Another issue: the documentation was lacking and inconsistent. The documentation provided for the standard library was a link to a 404 error. The `char` datatype was almost completely undocumented. The `append` global function was incorrectly documented to behave like a method. There seems to be no way to initialise an empty list of strings. Many compilation errors were reported as "unknown compiler error", making them very difficult to track down (hence this extra-long post documenting the kinds of thing that cause them!).
+
+Finally, the compiler apparently ignores any output filename directives. No matter what I tried, Sacalon always compiled my program file, `day18.sa`, to a binary called `day1` in the same directory as the source. Neither command line arguments nor invoking the compiler from elsewhere seemed to affect this.
+
+I could go on. Despite everything, though, the language itself is relatively inoffensive. I'm sure that given the chance, it'll eventually improve to the point of useability. It would be nice to have a way to declare empty lists, though.
+
+I solved this problem by carrying out an imperative fold-left-reduction. The language doesn't yet seem mature enough to deal with a more functional approach. I'm glad I didn't have to deal with pointers.
+
+**Sacalon**: it's not there yet.
+
+**Syntax Highlight**: `cuse` (executes inline C++)

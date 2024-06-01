@@ -1,8 +1,5 @@
 use file
 
-// WTF is this language
-// Build process: sacalon ./<this> ; mv <make a guess> <binary> ; ./<binary>
-
 struct linedata {
     var amount : int64 = 0
     var direction : int = 0 // 0, 1, 2, 3
