@@ -234,3 +234,13 @@ I solved this problem by carrying out an imperative fold-left-reduction. The lan
 **Sacalon**: it's not there yet.
 
 **Syntax Highlight**: `cuse` (executes inline C++)
+
+Day 19: [Gambit Scheme](https://gambitscheme.org)
+-------------------------------------------------
+I feel I've become very familiar with Scheme by this point. One of the features of the Gambit Scheme compiler is that it compiles to a binary via a C representation, so programs are pretty portable. (As if that wasn't enough, it can also be transpiled to JavaScript!) Other than that, it's everything you'd expect from a mature, polished implementation of Scheme.
+
+When solving this problem, the foresight of knowing the second part of the problem helped me structure my program to solve it; and this incidently meant my program solved the second part first, since it doesn't involve parsing quite as much input.
+
+**Gambit Scheme**: it's just LISP (but more portable).
+
+**Syntax Highlight**: `string->symbol` (converts a string to a symbol -- this was the first time I found a use for it)
