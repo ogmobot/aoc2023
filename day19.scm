@@ -140,11 +140,11 @@
                 (string->symbol (string-append s-string "hi")) (+ 1 s-val)))))
 
 (define (part-count multipart)
-    (fold * 1 (list
+    (*
         (- (cdr (assq 'xhi multipart)) (cdr (assq 'xlo multipart)))
         (- (cdr (assq 'mhi multipart)) (cdr (assq 'mlo multipart)))
         (- (cdr (assq 'ahi multipart)) (cdr (assq 'alo multipart)))
-        (- (cdr (assq 'shi multipart)) (cdr (assq 'slo multipart))))))
+        (- (cdr (assq 'shi multipart)) (cdr (assq 'slo multipart)))))
 
 ;; Main program
 
@@ -157,7 +157,7 @@
        (rule-table
             (list->table (map line->rule (car input-split)) test: string=?))
        (part-list (map line->part (cdr input-split))))
-    (pretty-print (fold + 0
+    (pretty-print (apply +
         (map
             (lambda (mp) (+ (cdr (assq 'xlo mp))
                             (cdr (assq 'mlo mp))
