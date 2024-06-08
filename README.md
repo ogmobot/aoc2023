@@ -244,3 +244,13 @@ When solving this problem, the foresight of knowing the second part of the probl
 **Gambit Scheme**: it's just LISP (but more portable).
 
 **Syntax Highlight**: `string->symbol` (converts a string to a symbol -- this was the first time I found a use for it)
+
+Day 20: [Erlang](https://www.erlang.org)
+----------------------------------------
+When I learned that Erlang was a very object-oriented language, I expected its syntax to resemble that of C++, or perhaps Smalltalk. Imagine my surprise when it turned out to be much closer to Prolog! (Apparently the language was first implmented in Prolog, which doesn't surprise me given its syntax.)
+
+My method of solving this problem was to instantiate a separate object for each of the ~60 puzzle elements and simulate the scenario with message-passing. While Erlang seems to be a perfect match for this kind of solution, it comes with a few quirks; for one, the main function needs to wait for the messages to propagate throughout the system before it queries the cycle-detecting components of the system. (This means my solution is a little slower than it needs to be, but removing the delay leads to inconsistent results.)
+
+**Erlang**: spin all the plates at once!
+
+**Syntax Highlight**: `receive` (delay execution until a message -- or a particular shape of message -- is received)
