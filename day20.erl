@@ -1,38 +1,17 @@
 -module(day20).
 -export([
-    % TODO export only main and examples
-    % General utility
-    foreach/2,
-    map/2,
-    wait_for_queue/0,
-    % Parsing
-    read_all_lines/1,
-    % Puzzle-specific utility
-    flipstate/1,
-    conjunct/1,
-    send_all/2,
-    send_n_times/3,
-    connect/3,
-    % Puzzle objects
+    % Puzzle objects exported so they can be spawned
     obj_broadcaster/0,
-    obj_broadcaster/1,
     obj_pulsetracker/2,
+    obj_cycledetector/2,
     obj_flipflop/0,
-    obj_flipflop/2,
     obj_conjunction/0,
-    obj_conjunction/2,
+    gcd/2,
     % Main function
-    example_1/0,
-    example_2/0,
-    main/0]).
+    main/0,
+    main/1]). % i.e. main([command line args])
 
 %% General utility %%
-
-foreach(Fun, [H|T]) -> Fun(H), foreach(Fun, T);
-foreach(_, []) -> ok.
-
-map(Fun, [H|T]) -> [Fun(H)|map(Fun, T)];
-map(_, []) -> [].
 
 wait_for_queue() ->
     % This often fails (e.g. when a process has recieved a message,
@@ -40,24 +19,23 @@ wait_for_queue() ->
     timer:sleep(500),
     {_, QueueLen} = erlang:process_info(self(), message_queue_len),
     if
-        QueueLen == 0 ->
-            ok;
-        true ->
-            wait_for_queue()
+        QueueLen == 0 -> ok;
+        true -> wait_for_queue()
     end.
+
+gcd(A, 0) -> A;
+gcd(A, B) -> gcd(B, A rem B).
 
 %% Parsing %%
 
 read_from_fp(Fp) ->
-    Line = file:read_line(Fp),
-    case Line of
+    Res = file:read_line(Fp),
+    case Res of
         {ok, Text} ->
             ChompText = string:chomp(Text),
             case string:is_empty(ChompText) of
-                true ->
-                    read_from_fp(Fp);
-                false ->
-                    [ChompText|read_from_fp(Fp)]
+                true  -> read_from_fp(Fp);
+                false -> [ChompText|read_from_fp(Fp)]
             end;
         eof -> []
     end.
@@ -68,9 +46,20 @@ read_all_lines(Filename) ->
     file:close(Fp),
     Lines.
 
-line_to_data(Text) ->
-    % "%jb -> fz\n" returns {"jb", <obj>, ["fz"]}
-    {}.
+line_to_data(Line) ->
+    % "%jb -> fz" returns {"jb", <obj>, ["fz"]}
+    IdConns = string:split(Line, " -> "),
+    Id = lists:nth(1, IdConns),
+    Conns = string:split(lists:nth(2, IdConns), ", ", all),
+    {Key, ObjType} = case string:prefix(Id, "%") of
+        nomatch ->
+            case string:prefix(Id, "&") of
+                nomatch -> {Id, obj_broadcaster};
+                Name -> {Name, obj_conjunction}
+            end;
+        Name -> {Name, obj_flipflop}
+    end,
+    {Key, spawn(day20, ObjType, []), Conns}.
 
 %% Puzzle-specific utility %%
 
@@ -88,7 +77,7 @@ update_parents({Signal, Who}, [{Who, _}|Rest]) ->
 update_parents({Signal, Who}, [H|Rest]) ->
     [H|update_parents({Signal, Who}, Rest)].
 
-send_all(X, Recipients) -> foreach(fun (R) -> R ! X end, Recipients).
+send_all(X, Recipients) -> lists:foreach(fun (R) -> R ! X end, Recipients).
 
 send_n_times(_, _, 0) -> ok;
 send_n_times(Target, Message, Count) ->
@@ -101,20 +90,49 @@ connect(Parent, Child, Tracker) ->
 
 build_connections(ObjMap, [], _) -> ObjMap;
 build_connections(ObjMap, [{Name, _, Connections}|Rest], Tracker) ->
-    foreach(
+    lists:foreach(
         fun (C) ->
             connect(maps:get(Name, ObjMap), maps:get(C, ObjMap), Tracker)
         end,
-        Connections
-    ),
+        Connections),
     build_connections(ObjMap, Rest, Tracker).
 
 build_obj_map(FileData, Tracker) ->
     % FileData is of the form [{name, obj, connections}, ...]
     ObjMap = maps:from_list(
-        map(fun ({Name, Obj, _}) -> {Name, Obj} end, FileData)
-    ),
-    build_connections(ObjMap, FileData, Tracker).
+        lists:map(fun ({Name, Obj, _}) -> {Name, Obj} end, FileData)),
+    ObjMapRx = maps:put("rx", spawn(day20, obj_broadcaster, []), ObjMap),
+    build_connections(ObjMapRx, FileData, Tracker).
+
+find_parents(Child, FileData) ->
+    lists:filtermap(
+        fun ({Name, _, Conns}) ->
+            case lists:member(Child, Conns) of
+                true  -> {true, Name};
+                false -> false
+            end
+        end,
+        FileData).
+
+detect_cycles(Button, CycleDetectors) ->
+    Button ! {lo, self()},
+    timer:sleep(5), % wait for signal to propagate
+    Cycles = lists:map(
+        fun (Cd) ->
+            Cd ! {query, self()},
+            receive
+                Count -> Count
+            end
+        end,
+        CycleDetectors),
+    case lists:any(fun (X) -> X == 0 end, Cycles) of
+        true  -> detect_cycles(Button, CycleDetectors);
+        false ->
+            %io:format("~p~n", [Cycles]),
+            GcdProduct = lists:foldl(
+                fun (A, B) -> A * B div gcd(A, B) end, 1, Cycles),
+            io:format("~p~n", [GcdProduct])
+    end.
 
 %% Puzzle Objects %%
 % Each object receives messages from parents
@@ -140,9 +158,31 @@ obj_pulsetracker(Lo, Hi) ->
     receive
         {hi, _} -> obj_pulsetracker(Lo, Hi + 1);
         {lo, _} -> obj_pulsetracker(Lo + 1, Hi);
-        finish ->
-            io:format("~p~n", [Lo * Hi]),
-            ok
+        finish -> io:format("~p~n", [Lo * Hi])
+    end.
+
+obj_cycleanswer(PressCount) ->
+    receive
+        {query, Sender} ->
+            Sender ! PressCount,
+            obj_cycleanswer(PressCount)
+    end.
+
+obj_cycledetector(ButtonId, ButtonCount) ->
+    receive
+        {lo, Sender} ->
+            if
+                Sender == ButtonId ->
+                    obj_cycledetector(ButtonId, ButtonCount + 1);
+                true ->
+                    obj_cycledetector(ButtonId, ButtonCount)
+            end;
+        {hi, _} ->
+                %io:format("got cycle: ~p from ~p~n", [ButtonCount, Sender]),
+                obj_cycleanswer(ButtonCount);
+        {query, Sender} ->
+            Sender ! 0,
+            obj_cycledetector(ButtonId, ButtonCount)
     end.
 
 obj_flipflop(State, Children) ->
@@ -178,59 +218,33 @@ obj_conjunction() -> obj_conjunction([], []).
 
 %% Main function
 
-example_1() ->
-    Tracker = spawn(day20, obj_pulsetracker, [0, 0]),
-    Button = spawn(day20, obj_broadcaster, []),
-    Broadcaster = spawn(day20, obj_broadcaster, []),
-    A = spawn(day20, obj_flipflop, []),
-    B = spawn(day20, obj_flipflop, []),
-    C = spawn(day20, obj_flipflop, []),
-    Inv = spawn(day20, obj_conjunction, []),
-    connect(Button, Broadcaster, Tracker),
-    connect(Broadcaster, A, Tracker),
-    connect(Broadcaster, B, Tracker),
-    connect(Broadcaster, C, Tracker),
-    connect(A, B, Tracker),
-    connect(B, C, Tracker),
-    connect(C, Inv, Tracker),
-    connect(Inv, A, Tracker),
-    % Push the button
-    send_n_times(Button, {lo, self()}, 1000),
-    wait_for_queue(),
-    Tracker ! finish.
-
-example_2() ->
-    Tracker = spawn(day20, obj_pulsetracker, [0, 0]),
-    Button = spawn(day20, obj_broadcaster, []),
-    ObjMap = build_obj_map([
-        {"broadcaster", spawn(day20, obj_broadcaster, []), ["a","b","c"]},
-        {"a", spawn(day20, obj_flipflop, []), ["b"]},
-        {"b", spawn(day20, obj_flipflop, []), ["c"]},
-        {"c", spawn(day20, obj_flipflop, []), ["inv"]},
-        {"inv", spawn(day20, obj_conjunction, []), ["a"]}
-    ], Tracker),
-    connect(Button, maps:get("broadcaster", ObjMap), Tracker),
-    send_n_times(Button, {lo, self()}, 1000),
-    wait_for_queue(),
-    Tracker ! finish.
-
 main() ->
-    % TODO
-    % Parse input file
-    % Set up an obj_whatever for each line
-    % Set up a pulse_tracker that is a child of every object
-    % (Pulse tracker must be added an additional time for additional child!)
-    % Send a button-pulse to broadcaster (and pulse tracker) 1000 times
-    % Set up cycle detectors for grandchildren of "rx"
-    % Every few hundred presses, query the cycle detectors
-    % If all of them report done, output their GCD and finish
     Lines = read_all_lines("input20.txt"),
-    FileData = map(line_to_data, Lines),
+    FileData = lists:map(fun (L) -> line_to_data(L) end, Lines),
     Tracker = spawn(day20, obj_pulsetracker, [0, 0]),
     ObjMap = build_obj_map(FileData, Tracker),
     Button = spawn(day20, obj_broadcaster, []),
     connect(Button, maps:get("broadcaster", ObjMap), Tracker),
+    RxGrandparents = lists:append(
+        lists:map(
+            fun (N) -> find_parents(N, FileData) end,
+            find_parents("rx", FileData))),
+    CycleDetectors = lists:map(
+        fun (N) ->
+            D = spawn(day20, obj_cycledetector, [Button, 0]),
+            maps:get(N, ObjMap) ! {add_child, D},
+            Button ! {add_child, D},
+            D
+        end,
+        RxGrandparents),
     % Part 1
     send_n_times(Button, {lo, self()}, 1000),
     wait_for_queue(),
-    Tracker ! finish.
+    Tracker ! finish,
+    % Part 2
+    % (Must take long enough for Tracker to send output)
+    % Cycle lengths are 3793, 3911, 3917, 3929
+    wait_for_queue(),
+    detect_cycles(Button, CycleDetectors).
+
+main(_) -> main().
