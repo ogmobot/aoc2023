@@ -132,11 +132,10 @@ detect_cycles(Button, CycleDetectors) ->
     case lists:any(fun (X) -> X == 0 end, Cycles) of
         true  -> detect_cycles(Button, CycleDetectors);
         false ->
-            GcdProduct = lists:foldl(
+            lists:foldl(
                 fun (A, B) -> A * B div gcd(A, B) end,
                 1,
-                Cycles),
-            io:format("~p~n", [GcdProduct])
+                Cycles)
     end.
 
 obj_counter(Counter) ->
@@ -259,7 +258,7 @@ main() ->
         N -> io:format("~p~n", [N])
     end,
     % Part 2
-    detect_cycles(Button, CycleDetectors),
+    io:format("~p~n", [detect_cycles(Button, CycleDetectors)]),
     unregister(monomon).
 
 main(_) -> main().
