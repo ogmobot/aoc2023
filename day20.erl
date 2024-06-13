@@ -1,12 +1,14 @@
 -module(day20).
 -export([
     % Puzzle objects exported so they can be spawned
+    obj_counter/1,
     obj_broadcaster/0,
     obj_pulsetracker/2,
     obj_cycledetector/2,
     obj_flipflop/0,
     obj_conjunction/0,
     gcd/2,
+    delayed_send/2,
     % Main function
     main/0,
     main/1]). % i.e. main([command line args])
@@ -14,14 +16,16 @@
 %% General utility %%
 
 wait_for_queue() ->
-    % This often fails (e.g. when a process has recieved a message,
-    % but not yet sent a reply). Treat it as sleep(500).
-    timer:sleep(500),
-    {_, QueueLen} = erlang:process_info(self(), message_queue_len),
-    if
-        QueueLen == 0 -> ok;
-        true -> wait_for_queue()
+    timer:sleep(1),
+    monomon ! {get_count, self()},
+    receive
+        0 -> ok;
+        _ -> wait_for_queue()
     end.
+
+delayed_send(Target, Signal) ->
+    timer:sleep(1),
+    Target ! Signal.
 
 gcd(A, 0) -> A;
 gcd(A, B) -> gcd(B, A rem B).
@@ -116,7 +120,7 @@ find_parents(Child, FileData) ->
 
 detect_cycles(Button, CycleDetectors) ->
     Button ! {lo, self()},
-    timer:sleep(5), % wait for signal to propagate
+    wait_for_queue(),
     Cycles = lists:map(
         fun (Cd) ->
             Cd ! {query, self()},
@@ -128,10 +132,19 @@ detect_cycles(Button, CycleDetectors) ->
     case lists:any(fun (X) -> X == 0 end, Cycles) of
         true  -> detect_cycles(Button, CycleDetectors);
         false ->
-            %io:format("~p~n", [Cycles]),
             GcdProduct = lists:foldl(
-                fun (A, B) -> A * B div gcd(A, B) end, 1, Cycles),
+                fun (A, B) -> A * B div gcd(A, B) end,
+                1,
+                Cycles),
             io:format("~p~n", [GcdProduct])
+    end.
+
+obj_counter(Counter) ->
+    receive
+        {adj_count, Amount} -> obj_counter(Counter + Amount);
+        {get_count, Sender} ->
+            Sender ! Counter,
+            obj_counter(Counter)
     end.
 
 %% Puzzle Objects %%
@@ -141,7 +154,9 @@ detect_cycles(Button, CycleDetectors) ->
 obj_broadcaster(Children) ->
     receive
         {HiLo, _} when (HiLo == hi orelse HiLo == lo) ->
+            monomon ! {adj_count, 1},
             send_all({HiLo, self()}, Children),
+            spawn(day20, delayed_send, [monomon, {adj_count, -1}]),
             obj_broadcaster(Children);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -185,9 +200,11 @@ obj_cycledetector(ButtonId, ButtonCount) ->
 obj_flipflop(State, Children) ->
     receive
         {lo, _} ->
+            monomon ! {adj_count, 1},
             % Flip state and send new state
             NewState = flipstate(State),
             send_all({NewState, self()}, Children),
+            spawn(day20, delayed_send, [monomon, {adj_count, -1}]),
             obj_flipflop(NewState, Children);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -198,8 +215,10 @@ obj_flipflop() -> obj_flipflop(lo, []).
 obj_conjunction(Children, Parents) ->
     receive
         {HiLo, Sender} when (HiLo == hi orelse HiLo == lo) ->
+            monomon ! {adj_count, 1},
             NewParents = update_parents({HiLo, Sender}, Parents),
             send_all({conjunct(NewParents), self()}, Children),
+            spawn(day20, delayed_send, [monomon, {adj_count, -1}]),
             obj_conjunction(Children, NewParents);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -212,6 +231,8 @@ obj_conjunction() -> obj_conjunction([], []).
 %% Main function
 
 main() ->
+    register(monomon, spawn(day20, obj_counter, [0])),
+    % (the Watcher)
     Lines = read_all_lines("input20.txt"),
     FileData = lists:map(fun (L) -> line_to_data(L) end, Lines),
     Tracker = spawn(day20, obj_pulsetracker, [0, 0]),
@@ -238,9 +259,7 @@ main() ->
         N -> io:format("~p~n", [N])
     end,
     % Part 2
-    % (Must take long enough for Tracker to send output)
-    % Cycle lengths are 3793, 3911, 3917, 3929
-    wait_for_queue(),
-    detect_cycles(Button, CycleDetectors).
+    detect_cycles(Button, CycleDetectors),
+    unregister(monomon).
 
 main(_) -> main().
