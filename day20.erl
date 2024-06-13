@@ -140,11 +140,8 @@ detect_cycles(Button, CycleDetectors) ->
 
 obj_broadcaster(Children) ->
     receive
-        {lo, _} ->
-            send_all({lo, self()}, Children),
-            obj_broadcaster(Children);
-        {hi, _} ->
-            send_all({hi, self()}, Children),
+        {HiLo, _} when (HiLo == hi orelse HiLo == lo) ->
+            send_all({HiLo, self()}, Children),
             obj_broadcaster(Children);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -158,7 +155,7 @@ obj_pulsetracker(Lo, Hi) ->
     receive
         {hi, _} -> obj_pulsetracker(Lo, Hi + 1);
         {lo, _} -> obj_pulsetracker(Lo + 1, Hi);
-        finish -> io:format("~p~n", [Lo * Hi])
+        {finish, Sender} -> Sender ! (Lo * Hi)
     end.
 
 obj_cycleanswer(PressCount) ->
@@ -200,12 +197,8 @@ obj_flipflop() -> obj_flipflop(lo, []).
 
 obj_conjunction(Children, Parents) ->
     receive
-        {hi, Sender} ->
-            NewParents = update_parents({hi, Sender}, Parents),
-            send_all({conjunct(NewParents), self()}, Children),
-            obj_conjunction(Children, NewParents);
-        {lo, Sender} ->
-            NewParents = update_parents({lo, Sender}, Parents),
+        {HiLo, Sender} when (HiLo == hi orelse HiLo == lo) ->
+            NewParents = update_parents({HiLo, Sender}, Parents),
             send_all({conjunct(NewParents), self()}, Children),
             obj_conjunction(Children, NewParents);
         {add_child, Child} ->
@@ -240,7 +233,10 @@ main() ->
     % Part 1
     send_n_times(Button, {lo, self()}, 1000),
     wait_for_queue(),
-    Tracker ! finish,
+    Tracker ! {finish, self()},
+    receive
+        N -> io:format("~p~n", [N])
+    end,
     % Part 2
     % (Must take long enough for Tracker to send output)
     % Cycle lengths are 3793, 3911, 3917, 3929
