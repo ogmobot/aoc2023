@@ -17,7 +17,7 @@
 
 wait_for_queue() ->
     timer:sleep(1),
-    monomon ! {get_count, self()},
+    lurien ! {get_count, self()},
     receive
         0 -> ok;
         _ -> wait_for_queue()
@@ -149,9 +149,9 @@ obj_counter(Counter) ->
 obj_broadcaster(Children) ->
     receive
         {HiLo, _} when (HiLo == hi orelse HiLo == lo) ->
-            monomon ! {adj_count, 1},
+            lurien ! {adj_count, 1},
             send_all({HiLo, self()}, Children),
-            spawn(day20, delayed_send, [monomon, {adj_count, -1}]),
+            spawn(day20, delayed_send, [lurien, {adj_count, -1}]),
             obj_broadcaster(Children);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -195,11 +195,11 @@ obj_cycledetector(ButtonId, ButtonCount) ->
 obj_flipflop(State, Children) ->
     receive
         {lo, _} ->
-            monomon ! {adj_count, 1},
+            lurien ! {adj_count, 1},
             % Flip state and send new state
             NewState = flipstate(State),
             send_all({NewState, self()}, Children),
-            spawn(day20, delayed_send, [monomon, {adj_count, -1}]),
+            spawn(day20, delayed_send, [lurien, {adj_count, -1}]),
             obj_flipflop(NewState, Children);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -210,10 +210,10 @@ obj_flipflop() -> obj_flipflop(lo, []).
 obj_conjunction(Children, Parents) ->
     receive
         {HiLo, Sender} when (HiLo == hi orelse HiLo == lo) ->
-            monomon ! {adj_count, 1},
+            lurien ! {adj_count, 1},
             NewParents = update_parents({HiLo, Sender}, Parents),
             send_all({conjunct(NewParents), self()}, Children),
-            spawn(day20, delayed_send, [monomon, {adj_count, -1}]),
+            spawn(day20, delayed_send, [lurien, {adj_count, -1}]),
             obj_conjunction(Children, NewParents);
         {add_child, Child} ->
             Child ! {add_parent, self()},
@@ -226,7 +226,7 @@ obj_conjunction() -> obj_conjunction([], []).
 %% Main function
 
 main() ->
-    register(monomon, spawn(day20, obj_counter, [0])),
+    register(lurien, spawn(day20, obj_counter, [0])),
     % (the Watcher)
     Lines = read_all_lines("input20.txt"),
     FileData = lists:map(fun (L) -> line_to_data(L) end, Lines),
@@ -255,6 +255,6 @@ main() ->
     end,
     % Part 2
     io:format("~p~n", [detect_cycles(Button, CycleDetectors)]),
-    unregister(monomon).
+    unregister(lurien).
 
 main(_) -> main().
