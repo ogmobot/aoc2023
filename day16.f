@@ -268,14 +268,14 @@ EXTENDED_STACK XTOP !
     loop
 ;
 
-: part-1 ( -- )
+: part-1 ( -- solution )
     D_> -1 0 colrow>coord
     trace-from-start
     count-covered-tiles
     reset-grid
 ;
 
-: part-2 ( -- )
+: part-2 ( -- solution )
     0
     ( from top row )
     GRID_SIZE @ 0 do
