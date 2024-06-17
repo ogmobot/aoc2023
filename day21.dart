@@ -44,8 +44,11 @@ class Terrain {
     }
 }
 
-Map<(int, int), Parity> stepOut(var terrain, int step_limit) {
-    //terrain[(0, 0)] = "foo";
+List<int> countSteps(var terrain, Iterable<int> step_counts) {
+    // Result is returned in ascending order, regardless of the
+    // order of step_counts
+    var step_limit = step_counts.reduce((x, y) => (x > y ? x : y));
+    List<int> result = [];
     Map<(int, int), Parity> steps = Map();
     Set<(int, int)> front = Set();
     front.add(terrain.start);
@@ -57,32 +60,62 @@ Map<(int, int), Parity> stepOut(var terrain, int step_limit) {
             steps[coord] = ((timer % 2 == 0) ? Parity.even : Parity.odd);
             new_front.addAll(terrain.get_adjacent(coord));
         });
-        front = new_front;
-        if (timer > 0 && (timer - 65) % 262 == 0) {
-            print("Timer ${timer}, Odd:");
-            print(steps.values.where((x) => x == Parity.odd).length);
-            print(" even:");
-            print(steps.values.where((x) => x == Parity.even).length);
+        if (step_counts.contains(timer)) {
+            result.add(steps.values
+                .where((x) =>
+                    (x == (timer % 2 == 0 ? Parity.even : Parity.odd)))
+                .length
+            );
         }
+        front = new_front;
         timer++;
     }
-    return steps;
+    return result;
+}
+
+Function get_parabola(List<double> xs, List<double> ys) {
+    var (x0, x1, x2) = (xs[0], xs[1], xs[2]);
+    var (y0, y1, y2) = (ys[0], ys[1], ys[2]);
+    // Found this formula for a on the internet, because figuring it out
+    // by hand was getting tedious
+    // (If x values aren't unique, this will divide by zero)
+    var a = (
+        ((y0 - y1) * (x0 - x2)) - ((y0 - y2) * (x0 - x1))
+    ) / (
+        (
+            ((x0 * x0) - (x1 * x1)) * (x0 - x2)
+        ) - (
+            ((x0 * x0) - (x2 * x2)) * (x0 - x1)
+        )
+    );
+    var b = ((y0 - y1) / (x0 - x1)) - (a * (x0 + x1));
+    var c = y0 - (a * x0 * x0) - (b * x0);
+    return ((x) => ((a * x * x) + (b * x) + c).toInt());
 }
 
 void main() {
     List<String> input = File("input21.txt")
         .readAsLinesSync();
     var terrain = Terrain(input);
-    for (var line in input) {
-        //terrain[(0, 0)] = line;
-    }
     const PART_1 = 64;
-    var steps = stepOut(terrain, PART_1);
-    print(steps.values.where((x) => x == Parity.even).length);
-
     const PART_2 = 26501365; // = 202300 * 131 + 65
+
+    print(countSteps(terrain, [PART_1]).first);
+
     // Expect a quadratic pattern to appear periodically.
-    // (E.g. let f(x) = number of tiles reached after (n * 131 + 65) steps
-    // then find f(202300).)
+    // Use f(2 * 131 + 65)
+    //     f(4 * 131 + 65)
+    //     f(6 * 131 + 65) to make a prediction.
+    const xs = [
+        (2 * 131) + 65,
+        (4 * 131) + 65,
+        (6 * 131) + 65
+    ]; // Must be in ascending order!
+    var ys = countSteps(terrain, xs);
+    var f = get_parabola(
+        xs.map((x) => x.toDouble()).toList(),
+        ys.map((y) => y.toDouble()).toList()
+    );
+    print(f(PART_2));
     return;
 }
