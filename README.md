@@ -209,7 +209,7 @@ Day 17: [Standard ML](https://www.smlnj.org)
 
 I used the New Jersey implementation because it is supposed to have quite a large standard library, but I didn't end up using much of it! I had initially planned to represent the grid as a hash map (of coordinates to values), but I instead used a list of lists; and I implemented my own priority queue when I couldn't figure out how to set up the library one. This was my first time setting up a priority queue that wasn't a binary heap -- it seemed like an easier option in this context.
 
-My first attempt to solve this problem used naive bread-first and depth-first searches, but after running them for a few hours, I decided to figure out the priority queue option instead. I like to think I learned something in setting up the leftist heap.
+My first attempt to solve this problem used naive breadth-first and depth-first searches, but after running them for a few hours, I decided to figure out the priority queue option instead. I like to think I learned something in setting up the leftist heap.
 
 **Standard ML**: an elegant functional language (that isn't too fussy).
 
