@@ -129,13 +129,9 @@ detect_cycles(Button, CycleDetectors) ->
             end
         end,
         CycleDetectors),
-    case lists:any(fun (X) -> X == 0 end, Cycles) of
+    case lists:member(0, Cycles) of
         true  -> detect_cycles(Button, CycleDetectors);
-        false ->
-            lists:foldl(
-                fun (A, B) -> A * B div gcd(A, B) end,
-                1,
-                Cycles)
+        false -> lists:foldl(fun (A, B) -> A * B div gcd(A, B) end, 1, Cycles)
     end.
 
 obj_counter(Counter) ->
