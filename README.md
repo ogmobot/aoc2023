@@ -254,3 +254,13 @@ My method of solving this problem was to instantiate a separate object for each 
 **Erlang**: spin all the plates at once!
 
 **Syntax Highlight**: `receive` (delay execution until a message -- or a particular shape of message -- is received)
+
+Day 21: [Dart](https://dart.dev)
+--------------------------------
+Compared to some of the other languages I've used, Dart felt very familiar. Its syntax feels very Java or C++-like, and its anonymous functions can be sugared to look like JavaScript's. Its optional types are nice too. When I started writing this solution, I thought I'd have to import `dart:collection` to use some of the data structures I wanted; but as I later discovered, `Map`s are part of Dart's core, and `dart:collection` is only needed if you want a specific implementation of them. The language seems to be very robust and predictable. Apparently it can also be transpiled to JavaScript.
+
+My approach to solving this problem was to try to determine a pattern and extrapolate it into the future. My attempt to do this in Python failed, and I had to use a different (awful) approach. I suspect I had chosen the wrong values to try and extrapolate from. In my Dart solution, I've only used even multiples of the grid's width, and this seems to fix the problem. (Note that once again, Eric has controlled properties of the input to ensure the output can be extrapolated this way.)
+
+**Dart**: Google's Java.
+
+**Syntax Highlight**: `as` (unwraps a nullable value)
