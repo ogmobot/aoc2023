@@ -103,14 +103,12 @@ void main() {
     print(countSteps(terrain, [PART_1]).first);
 
     // Expect a quadratic pattern to appear periodically.
-    // Use f(2 * 131 + 65)
-    //     f(4 * 131 + 65)
-    //     f(6 * 131 + 65) to make a prediction.
+    // (xs must be in ascending order!)
     const xs = [
-        (2 * 131) + 65,
-        (4 * 131) + 65,
-        (6 * 131) + 65
-    ]; // Must be in ascending order!
+        (0 * 131) + 65,
+        (1 * 131) + 65,
+        (2 * 131) + 65
+    ];
     var ys = countSteps(terrain, xs);
     var f = get_parabola(
         xs.map((x) => x.toDouble()).toList(),
