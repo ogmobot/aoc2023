@@ -16,7 +16,7 @@ class Terrain {
             _width = (line.length > _width ? line.length : _width);
             _height++;
             for (var c = 0; c < line.length; c++) {
-                var ch = line.substring(c, c + 1);
+                final ch = line.substring(c, c + 1);
                 _maptemplate[(r, c)] = (
                     ch == "#" ? Feature.rock : Feature.space);
                 if (ch == "S") {
@@ -27,7 +27,7 @@ class Terrain {
     }
 
    Iterable<(int, int)> get_adjacent((int, int) coord) {
-        var (row, col) = coord;
+        final (row, col) = coord;
         return [
             (row    , col + 1),
             (row + 1, col    ),
@@ -37,7 +37,7 @@ class Terrain {
     }
 
     Feature operator[]((int, int) coord) {
-        var (row, col) = coord;
+        final (row, col) = coord;
         // The result of % operator is always non-negative
         return _maptemplate[((row % _height), (col % _width))]
             as Feature; // This should never be null!
@@ -47,7 +47,7 @@ class Terrain {
 List<int> countSteps(var terrain, Iterable<int> step_counts) {
     // Result is returned in ascending order, regardless of the
     // order of step_counts
-    var step_limit = step_counts.reduce((x, y) => (x > y ? x : y));
+    final step_limit = step_counts.reduce((x, y) => (x > y ? x : y));
     List<int> result = [];
     Map<(int, int), Parity> steps = Map();
     Set<(int, int)> front = Set();
@@ -74,12 +74,12 @@ List<int> countSteps(var terrain, Iterable<int> step_counts) {
 }
 
 Function get_parabola(List<double> xs, List<double> ys) {
-    var (x0, x1, x2) = (xs[0], xs[1], xs[2]);
-    var (y0, y1, y2) = (ys[0], ys[1], ys[2]);
+    final (x0, x1, x2) = (xs[0], xs[1], xs[2]);
+    final (y0, y1, y2) = (ys[0], ys[1], ys[2]);
     // Found this formula for a on the internet, because figuring it out
     // by hand was getting tedious
     // (If x values aren't unique, this will divide by zero)
-    var a = (
+    final a = (
         ((y0 - y1) * (x0 - x2)) - ((y0 - y2) * (x0 - x1))
     ) / (
         (
@@ -88,15 +88,15 @@ Function get_parabola(List<double> xs, List<double> ys) {
             ((x0 * x0) - (x2 * x2)) * (x0 - x1)
         )
     );
-    var b = ((y0 - y1) / (x0 - x1)) - (a * (x0 + x1));
-    var c = y0 - (a * x0 * x0) - (b * x0);
+    final b = ((y0 - y1) / (x0 - x1)) - (a * (x0 + x1));
+    final c = y0 - (a * x0 * x0) - (b * x0);
     return ((x) => ((a * x * x) + (b * x) + c).toInt());
 }
 
 void main() {
     List<String> input = File("input21.txt")
         .readAsLinesSync();
-    var terrain = Terrain(input);
+    final terrain = Terrain(input);
     const PART_1 = 64;
     const PART_2 = 26501365; // = 202300 * 131 + 65
 
@@ -109,8 +109,8 @@ void main() {
         (1 * 131) + 65,
         (2 * 131) + 65
     ];
-    var ys = countSteps(terrain, xs);
-    var f = get_parabola(
+    final ys = countSteps(terrain, xs);
+    final f = get_parabola(
         xs.map((x) => x.toDouble()).toList(),
         ys.map((y) => y.toDouble()).toList()
     );
