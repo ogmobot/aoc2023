@@ -1,5 +1,3 @@
-;; Run with `guile -x .w --language=wisp <this>`
-
 import : ice-9 format .
 import : ice-9 rdelim .
 import : ice-9 regex .
@@ -115,6 +113,25 @@ define : collisions coords terrain
         else
             collisions (cdr coords) terrain
 
+define : make-support-lookup supports id-range
+    . "Creates a function that returns supporters or supportees"
+    let
+        : supporter-network (make-hash-table)
+          supportee-network (make-hash-table)
+        for-each
+            lambda : x
+                hash-set! supporter-network x (find-supporters x supports)
+                hash-set! supportee-network x (find-supportees x supports)
+            . id-range
+        lambda : x which
+            cond
+                : equal? which 'supporters
+                    hash-ref supporter-network x
+                : equal? which 'supportees
+                    hash-ref supportee-network x
+                else
+                    . #f
+
 define : drop-til-you-stop! brick locked-in supports
     let
         : brick-id (car brick)
@@ -166,20 +183,20 @@ define : find-supportees brick-id supports
                 . {(car pair) = brick-id}
             hash-keys supports
 
-define : count-falls-no-cache supports removed
+define : count-falls-no-cache support-lookup removed
     . "How many other bricks will fall when everything in `removed` is gone?"
     let*
-        : find-supportees-1 (lambda (x) (find-supportees x supports))
+        : find-supportees-1 (lambda (x) (support-lookup x 'supportees))
           gone? (lambda (xs) (subset? xs removed))
           might-fall : apply append : map find-supportees-1 removed
           can-fall : filter (lambda (x) (not (member x removed))) might-fall
-          will-fall : filter (lambda (x) (gone? (find-supporters x supports))) can-fall
+          will-fall : filter (lambda (x) (gone? (support-lookup x 'supporters))) can-fall
         cond
             {(length will-fall) = 0}
                 . {(length removed) - 1}
             else
                 count-falls
-                    . supports
+                    . support-lookup
                     uniq
                         sort
                             append will-fall removed
@@ -187,11 +204,11 @@ define : count-falls-no-cache supports removed
 
 define count-falls : cachify-2 count-falls-no-cache
 
-define : count-safe-pulls supports id-range
+define : count-safe-pulls support-lookup id-range
     . "Counts the number of bricks that can be removed safely"
     length
         filter
-            lambda (x) {(count-falls supports (list x)) = 0}
+            lambda (x) {(count-falls support-lookup (list x)) = 0}
             . id-range
 
 define : main
@@ -204,9 +221,10 @@ define : main
                     string-trim-right *text-in* #\Newline
                     . #\Newline
             . 1
+    define *id-range* : range 1 (length *bricks*)
     ;; Set up the tower...
     let
-        : locked-in : make-hash-table (length *bricks*) ;; size of input
+        : locked-in : make-hash-table (length *bricks*)
         for-each
             lambda : brk
                 drop-til-you-stop! brk locked-in *supports*
@@ -214,20 +232,15 @@ define : main
                 . *bricks*
                 lambda : a b
                     . {(get-smallest-z (cdr a)) < (get-smallest-z (cdr b))}
-    format #t "~a~%"
-        count-safe-pulls *supports* : range 1 (length *bricks*)
-    format #t "~a~%"
-        apply +
-            map
-                lambda : x
-                    count-falls *supports* : list x
-                range 1 (length *bricks*)
+    let
+        : support-lookup : make-support-lookup *supports* *id-range*
+        format #t "~a~%"
+            count-safe-pulls support-lookup *id-range*
+        format #t "~a~%"
+            apply +
+                map
+                    lambda : x
+                        count-falls support-lookup : list x
+                    . *id-range*
 
-;statprof main
-;; Takes ~30 min
 main
-
-; biggest offenders:
-; ice-9/boot-9.scm:220:5:map1   542838
-; day22.w:45:16                 133629
-; filter                          3045
