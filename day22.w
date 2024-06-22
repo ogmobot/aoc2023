@@ -15,6 +15,44 @@ define : any? proc vals
         else
             any? proc (cdr vals)
 
+define : all? proc vals
+    cond
+        : null? vals
+            . #t
+        : proc (car vals)
+            all? proc (cdr vals)
+        else
+            . #f
+
+define : subset? a b
+    all?
+        lambda : x
+            member x b
+        . a
+
+define : uniq xs
+    . "Removes duplicates from a sorted list"
+    cond
+        {(length xs) < 2}
+            . xs
+        : = (car xs) (cadr xs)
+            uniq (cdr xs)
+        else
+            cons (car xs) (uniq (cdr xs))
+
+define : cachify-2 proc
+    let
+        : cache (make-hash-table)
+        lambda : a b
+            cond
+                : hash-ref cache (cons a b)
+                    hash-ref cache (cons a b)
+                else
+                    let
+                        : res : proc a b
+                        hash-set! cache (cons a b) res
+                        . res
+
 define : enumify vals start-index
     cond
         : null? vals
@@ -128,20 +166,33 @@ define : find-supportees brick-id supports
                 . {(car pair) = brick-id}
             hash-keys supports
 
+define : count-falls-no-cache supports removed
+    . "How many other bricks will fall when everything in `removed` is gone?"
+    let*
+        : find-supportees-1 (lambda (x) (find-supportees x supports))
+          gone? (lambda (xs) (subset? xs removed))
+          might-fall : apply append : map find-supportees-1 removed
+          can-fall : filter (lambda (x) (not (member x removed))) might-fall
+          will-fall : filter (lambda (x) (gone? (find-supporters x supports))) can-fall
+        cond
+            {(length will-fall) = 0}
+                . {(length removed) - 1}
+            else
+                count-falls
+                    . supports
+                    uniq
+                        sort
+                            append will-fall removed
+                            . <
+
+define count-falls : cachify-2 count-falls-no-cache
+
 define : count-safe-pulls supports id-range
     . "Counts the number of bricks that can be removed safely"
-    cond
-        : null? id-range
-            . 0
-        else
-            + : count-safe-pulls supports (cdr id-range)
-                let
-                    : supportees : find-supportees (car id-range) supports
-                    cond
-                        : any? (lambda (x) (= 1 (length (find-supporters x supports)))) supportees
-                            . 0
-                        else
-                            . 1
+    length
+        filter
+            lambda (x) {(count-falls supports (list x)) = 0}
+            . id-range
 
 define : main
     define *supports* : make-hash-table
@@ -163,7 +214,20 @@ define : main
                 . *bricks*
                 lambda : a b
                     . {(get-smallest-z (cdr a)) < (get-smallest-z (cdr b))}
-    format #t "~a~%" : count-safe-pulls *supports* : range 1 (length *bricks*)
+    format #t "~a~%"
+        count-safe-pulls *supports* : range 1 (length *bricks*)
+    format #t "~a~%"
+        apply +
+            map
+                lambda : x
+                    count-falls *supports* : list x
+                range 1 (length *bricks*)
 
-;statprof main #:count-calls? #t
+;statprof main
+;; Takes ~30 min
 main
+
+; biggest offenders:
+; ice-9/boot-9.scm:220:5:map1   542838
+; day22.w:45:16                 133629
+; filter                          3045
