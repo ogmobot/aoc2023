@@ -2,7 +2,6 @@ import : ice-9 format .
 import : ice-9 rdelim .
 import : ice-9 regex .
 import : ice-9 textual-ports .
-import : statprof .
 
 define : any? proc vals
     cond
@@ -187,10 +186,18 @@ define : count-falls-no-cache support-lookup removed
     . "How many other bricks will fall when everything in `removed` is gone?"
     let*
         : find-supportees-1 (lambda (x) (support-lookup x 'supportees))
-          gone? (lambda (xs) (subset? xs removed))
-          might-fall : apply append : map find-supportees-1 removed
-          can-fall : filter (lambda (x) (not (member x removed))) might-fall
-          will-fall : filter (lambda (x) (gone? (support-lookup x 'supporters))) can-fall
+          gone?
+            lambda (xs) (subset? xs removed)
+          might-fall
+            apply append : map find-supportees-1 removed
+          can-fall
+            filter
+                lambda (x) (not (member x removed))
+                . might-fall
+          will-fall
+            filter
+                lambda (x) (gone? (support-lookup x 'supporters))
+                . can-fall
         cond
             {(length will-fall) = 0}
                 . {(length removed) - 1}
@@ -212,35 +219,36 @@ define : count-safe-pulls support-lookup id-range
             . id-range
 
 define : main
-    define *supports* : make-hash-table
-    define *text-in* : call-with-input-file "input22.txt" get-string-all
-    define *bricks*
-        enumify
-            map : lambda (x) (nums->brick (text->nums x))
-                string-split
-                    string-trim-right *text-in* #\Newline
-                    . #\Newline
-            . 1
-    define *id-range* : range 1 (length *bricks*)
-    ;; Set up the tower...
-    let
-        : locked-in : make-hash-table (length *bricks*)
-        for-each
-            lambda : brk
-                drop-til-you-stop! brk locked-in *supports*
-            sort
-                . *bricks*
-                lambda : a b
-                    . {(get-smallest-z (cdr a)) < (get-smallest-z (cdr b))}
-    let
-        : support-lookup : make-support-lookup *supports* *id-range*
-        format #t "~a~%"
-            count-safe-pulls support-lookup *id-range*
-        format #t "~a~%"
-            apply +
-                map
-                    lambda : x
-                        count-falls support-lookup : list x
-                    . *id-range*
+    let*
+        : text-in : call-with-input-file "input22.txt" get-string-all
+          bricks
+            enumify
+                map : lambda (x) (nums->brick (text->nums x))
+                    string-split
+                        string-trim-right text-in #\Newline
+                        . #\Newline
+                . 1
+          id-range : range 1 (length bricks)
+          supports : make-hash-table (length bricks)
+        ;; Set up the tower...
+        let
+            : locked-in : make-hash-table (length bricks)
+            for-each
+                lambda : brk
+                    drop-til-you-stop! brk locked-in supports
+                sort
+                    . bricks
+                    lambda : a b
+                        . {(get-smallest-z (cdr a)) < (get-smallest-z (cdr b))}
+        let
+            : support-lookup : make-support-lookup supports id-range
+            format #t "~a~%"
+                count-safe-pulls support-lookup id-range
+            format #t "~a~%"
+                apply +
+                    map
+                        lambda : x
+                            count-falls support-lookup : list x
+                        . id-range
 
 main
