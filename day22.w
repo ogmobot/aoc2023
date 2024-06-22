@@ -20,19 +20,6 @@ define : uniq xs
         else
             cons (car xs) (uniq (cdr xs))
 
-define : cachify-2 proc
-    let
-        : cache (make-hash-table)
-        lambda : a b
-            cond
-                : hash-ref cache (cons a b)
-                    hash-ref cache (cons a b)
-                else
-                    let
-                        : res : proc a b
-                        hash-set! cache (cons a b) res
-                        . res
-
 define : enumify vals start-index
     if : null? vals
         list
@@ -163,7 +150,7 @@ define : find-supportees brick-id supports
                 . {(car pair) = brick-id}
             hash-keys supports
 
-define : count-falls-no-cache support-lookup removed
+define : count-falls support-lookup removed
     . "How many other bricks will fall when everything in `removed` is gone?"
     let*
         : find-supportees-1 (lambda (x) (support-lookup x 'supportees))
@@ -182,21 +169,11 @@ define : count-falls-no-cache support-lookup removed
         if {(length will-fall) = 0}
             . {(length removed) - 1}
         ; else
-            count-falls
-                . support-lookup
+            count-falls support-lookup
                 uniq
                     sort
                         append will-fall removed
                         . <
-
-define count-falls : cachify-2 count-falls-no-cache
-
-define : count-safe-pulls support-lookup id-range
-    . "Counts the number of bricks that can be removed safely"
-    length
-        filter
-            lambda (x) {(count-falls support-lookup (list x)) = 0}
-            . id-range
 
 define : main
     let*
@@ -216,19 +193,19 @@ define : main
             for-each
                 lambda : brk
                     drop-til-you-stop! brk locked-in supports
-                sort
-                    . bricks
+                sort bricks
                     lambda : a b
                         . {(get-smallest-z (cdr a)) < (get-smallest-z (cdr b))}
-        let
+        let*
             : support-lookup : make-support-lookup supports id-range
-            format #t "~a~%"
-                count-safe-pulls support-lookup id-range
-            format #t "~a~%"
-                apply +
-                    map
-                        lambda : x
-                            count-falls support-lookup : list x
-                        . id-range
+              fall-counts
+                map
+                    lambda : x
+                        count-falls support-lookup : list x
+                    . id-range
+            format #t "~a~%~a~%"
+                length : filter (lambda (x) {x = 0}) fall-counts
+                apply + fall-counts
 
+;; Takes ~80s
 main
