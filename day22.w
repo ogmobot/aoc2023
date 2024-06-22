@@ -3,29 +3,12 @@ import : ice-9 rdelim .
 import : ice-9 regex .
 import : ice-9 textual-ports .
 
-define : any? proc vals
-    cond
-        : null? vals
-            . #f
-        : proc (car vals)
-            . #t
-        else
-            any? proc (cdr vals)
-
-define : all? proc vals
-    cond
-        : null? vals
-            . #t
-        : proc (car vals)
-            all? proc (cdr vals)
-        else
-            . #f
-
 define : subset? a b
-    all?
-        lambda : x
-            member x b
-        . a
+    or
+        null? a
+        and
+            member (car a) b
+            subset? (cdr a) b
 
 define : uniq xs
     . "Removes duplicates from a sorted list"
@@ -51,20 +34,18 @@ define : cachify-2 proc
                         . res
 
 define : enumify vals start-index
-    cond
-        : null? vals
-            list
-        else
-            cons
-                cons start-index (car vals)
-                enumify (cdr vals) {start-index + 1}
+    if : null? vals
+        list
+    ; else
+        cons
+            cons start-index (car vals)
+            enumify (cdr vals) {start-index + 1}
 
 define : range x-from x-to ;; inclusive
-    cond
-        {x-from > x-to}
-            list
-        else
-            cons x-from : range {x-from + 1} x-to 
+    if {x-from > x-to}
+        list
+    ; else
+        cons x-from : range {x-from + 1} x-to
 
 define : hash-keys ht
     hash-fold
@@ -198,16 +179,15 @@ define : count-falls-no-cache support-lookup removed
             filter
                 lambda (x) (gone? (support-lookup x 'supporters))
                 . can-fall
-        cond
-            {(length will-fall) = 0}
-                . {(length removed) - 1}
-            else
-                count-falls
-                    . support-lookup
-                    uniq
-                        sort
-                            append will-fall removed
-                            . <
+        if {(length will-fall) = 0}
+            . {(length removed) - 1}
+        ; else
+            count-falls
+                . support-lookup
+                uniq
+                    sort
+                        append will-fall removed
+                        . <
 
 define count-falls : cachify-2 count-falls-no-cache
 
