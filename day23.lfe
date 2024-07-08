@@ -2,13 +2,10 @@
     (export
         (obj-hashtable 1)
         (reply 1)
-        (file->string 1)
-        (input->simple 2)
-        (input->weighted 2)
         (all-paths-from 4)
-        (longest-path 1)
-        (weighted-example 0)
-        (main 0)))
+        (all-paths-from-safe 4)
+        (main 0)
+        (main 1)))
 
 (defun obj-hashtable (ht)
     (receive
@@ -114,25 +111,28 @@
                     (list
                         (maps:get 'start simple-ht)
                         (maps:get 'end   simple-ht))))))
-            (spawn 'day23 'obj-hashtable (list
-                (maps:from_list (lists:append
-                    (list
-                        (lists:map
-                            (lambda (term)
-                                (tuple term
-                                    (let ((searcher
-                                        (spawn 'day23 'all-paths-from (list
-                                            simple-network
-                                            (list term)
-                                            0
-                                            (lists:delete term terminals)))))
-                                        (! searcher (tuple 'query (self)))
-                                        (receive
-                                            ((tuple 'response x) x)))))
-                            terminals)
-                        (list
-                            (tuple 'start (maps:get 'start simple-ht))
-                            (tuple 'end   (maps:get 'end   simple-ht))))))))))
+            (let ((result
+                    (spawn 'day23 'obj-hashtable (list
+                        (maps:from_list (lists:append
+                            (list
+                                (lists:map
+                                    (lambda (term)
+                                        (tuple term
+                                            (let ((searcher
+                                                (spawn 'day23 'all-paths-from-safe (list
+                                                    simple-network
+                                                    (list term)
+                                                    0
+                                                    (lists:delete term terminals)))))
+                                                (! searcher (tuple 'query (self)))
+                                                (receive
+                                                    ((tuple 'response x) x)))))
+                                    terminals)
+                                (list
+                                    (tuple 'start (maps:get 'start simple-ht))
+                                    (tuple 'end   (maps:get 'end   simple-ht))))))))))
+                (! simple-network 'finish)
+                result)))
 
 (defun all-paths-from (network path cost terminals)
     (if (lists:member (car path) terminals)
@@ -164,37 +164,55 @@
                                         (receive ((tuple 'response result) result)))
                                     children)))))))))
 
-;; First example, where slopes are one-way.
-;; (longest route should be 94)
-(defun weighted-example ()
-    (obj-hashtable #M(
-        "0,1" (list (cons "5,3" 15))
-        "3,11" (list (cons "11,21" 30) (cons "13,13" 24))
-        "5,3" (list (cons "3,11" 22) (cons "13,5" 22))
-        "11,21" (list (cons "19,19" 10))
-        "13,5" (list (cons "13,13" 12) (cons "19,13" 38))
-        "13,13" (list (cons "11,21" 18) (cons "19,13" 10))
-        "19,13" (list (cons "19,19" 10))
-        "19,19" (list (cons "22,21" 5))
-        'start "0,1"
-        'end "22,21")))
+(defun all-paths-from-safe (network path cost terminals)
+    ; This doesn't spawn processes at an exponential rate
+    (if (lists:member (car path) terminals)
+        (reply (list (cons (car path) cost)))
+    ;else
+        (progn
+            (! network (tuple 'get (car path) (self)))
+            (receive
+                ((tuple 'response adj-pairs)
+                    (reply
+                        (lists:append
+                            (lists:filtermap
+                                (lambda (pair) ; pair is (coord . cost)
+                                    (if (lists:member (car pair) path)
+                                        'false
+                                    ; else
+                                        (tuple 'true
+                                            (let ((child
+                                                    (spawn
+                                                        'day23
+                                                        'all-paths-from-safe
+                                                        (list
+                                                            network
+                                                            (cons (car pair) path)
+                                                            (+ cost (cdr pair))
+                                                            terminals))))
+                                            (! child (tuple 'query (self)))
+                                            (receive
+                                                ((tuple 'response result)
+                                                    result))))))
+                                adj-pairs))))))))
 
 (defun longest-path (network)
     (! network (tuple 'get 'start (self)))
     (let ((start (receive ((tuple 'response x) x))))
         (! network (tuple 'get 'end (self)))
         (let ((end (receive ((tuple 'response x) x))))
-            (let ((solver (spawn 'day23 'all-paths-from
+            (let ((solver (spawn 'day23 'all-paths-from-safe
                     (list network (list start) 0 (list end)))))
                 (! solver (tuple 'query (self)))
                 (receive
-                    ((tuple 'response cost-dests)
+                    ((tuple 'response dest-costs)
                         (lists:foldr
                             (lambda (dest-cost best)
                                 (max (cdr dest-cost) best))
                             0
-                            cost-dests)))))))
+                            dest-costs)))))))
 
+;; Takes ~10m
 (defun main ()
     (let* ((input-text (file->string "input23.test"))
            (network-1 (input->weighted input-text 'false))
@@ -204,3 +222,5 @@
             (longest-path network-2)))
         (! network-1 'finish)
         (! network-2 'finish)))
+
+(defun main (_) (main))
