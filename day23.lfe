@@ -214,7 +214,7 @@
 
 ;; Takes ~10m
 (defun main ()
-    (let* ((input-text (file->string "input23.test"))
+    (let* ((input-text (file->string "input23.txt"))
            (network-1 (input->weighted input-text 'false))
            (network-2 (input->weighted input-text 'true)))
         (io:format "~p~n~p~n" (list
