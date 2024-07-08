@@ -133,7 +133,7 @@ It's been a hot minute since I used a con**cat**enative language. Kitten is a bi
 
 Speaking of functions, the language's standard library was lacking a handful of common functions that I ended up implementing by hand: `n take` (the first n items of a list), `xs ys f zip_with` (fold a pair of lists together using a given function) and `haystack needle contains` (determine whether an element is present in a list). In addition, I modified some existing functions to work with `Int64` values, rather than the default `Int32` (`map_index_i64`, `replicate_i64`).
 
-The language is also *slow*. The syntax-checking, type-checking and interpreter startup only take a few seconds, but the run time of the program itself is about 75 minutes (to complete both parts of the problem). This seems very high for an algorithm which is, in theory, $O(n^{2})$ with $n<500$. Could it be that the time complexity of the functions I'm using is higher than I thought? Or, more likely, is it all the overhead incurred from copying local variables around? I'm not sure I want to try to optimise this by using the stack instead of local variable assignments. I feel like this is a language that is almost good, but isn't quite there yet.
+The language is also *slow*. The syntax-checking, type-checking and interpreter startup only take a few seconds, but the run time of the program itself is about 75 minutes (to complete both parts of the problem). This seems very high for an algorithm which is, in theory, $O(n^{2})$ with $n<500$. Could it be that the time complexity of the functions I'm using is higher than I thought? Or is it all the overhead incurred from copying local variables around? The latter seems more likely to me, but I'm not sure I want to try to optimise this by using the stack instead of local variable assignments. I feel like this is a language that is almost good, but isn't quite there yet.
 
 My hasty Python solution for this day's task got me to the 31st place on the leaderboard! (My time of 6 minutes and 42 seconds was significantly faster than the runtime of this Kitten solution.)
 
@@ -274,3 +274,19 @@ The puzzle gave me a little more trouble than I would have liked. Scheme makes i
 **Wisp**: I can't believe it's not Scheme!
 
 **Syntax Highlight**: `.` (quotes an atom instead of calling it as a function)
+
+Day 23: [Lisp Flavoured Erlang](https://lfe.io)
+-----------------------------------------------
+I really enjoyed using the concurrent capabilities of Erlang on Day 20, and finding the longest path in a graph seemed like an embarrassingly parallelisable task; hence, LFE was my language of choice for this task. Not everything went as planned.
+
+Erlang is great at handling concurrent tasks, but I don't think the syntax of Lisp is very well-suited to carry out sequential commands like send and receive. There's a good chance LFE (or Erlang!) has a nicer way to structure this sort of pattern, but if there is, I'm not familiar with it.
+
+I've written many solutions now in Scheme-like (Lisp-1) languages, but LFE is a Lisp-2 language and has different syntax for referring to functions. The only other Lisp-2 I'm very familiar with is Common Lisp, but LFE's syntax is different enough that I still found it tough to deal with.
+
+Finally, my original super-concurrent approach didn't work! The number of concurrent tasks blew past the default limit of 32768 and crashed the BEAM vm. My "safe" version spawns fewer tasks, but it's enough to slow the program's speed to a crawl. I'd like to speed up the program, either by setting up more parallel concurrent tasks, or by removing concurrency altogether. I'm not sure which, yet.
+
+Writing Hy in the 2021 challenge felt like writing Python, even though the syntax was lisp-like. LFE, on the other hand, feels a lot more lisp-y to me.
+
+**Lisp Flavoured Erlang**: Erlang for people who don't like Prolog.
+
+**Syntax Highlight**: `!` (send a message to another process -- the same as in Erlang)
