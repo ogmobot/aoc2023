@@ -4,6 +4,7 @@
         (reply 1)
         (file->string 1)
         (input->simple 2)
+        (input->weighted 2)
         (all-paths-from 4)
         (longest-path 1)
         (weighted-example 0)
@@ -15,6 +16,9 @@
             (obj-hashtable (maps:put key value ht)))
         ((tuple 'get key who)
             (! who (tuple 'response (maps:get key ht)))
+            (obj-hashtable ht))
+        ((tuple 'get-all who)
+            (! who (tuple 'response ht))
             (obj-hashtable ht))
         ('finish 'ok)))
 
@@ -69,6 +73,8 @@
                                     '(up down left right))))))))
         (progn
             (lists:foreach
+                ;; Could probably turn this into a maps:fromlist somehow,
+                ;; and then just spawn obj-hashtable with the map as arg
                 (lambda (pair)
                     (! result (tuple 'set
                         (car pair)
@@ -91,9 +97,46 @@
                     (lists:seq 0 (- (length text) 1))))
             result)))
 
+(defun input->weighted (text ignoreslopesp)
+    (let* ((simple-network (input->simple text ignoreslopesp))
+           (simple-ht (progn
+                (! simple-network (tuple 'get-all (self)))
+                (receive ((tuple 'response ht) ht))))
+           (terminals (lists:append
+                (list
+                    (maps:keys
+                        (maps:filter
+                            (lambda (k v)
+                                (andalso
+                                    (is_list v)
+                                    (> (length v) 2)))
+                            simple-ht))
+                    (list
+                        (maps:get 'start simple-ht)
+                        (maps:get 'end   simple-ht))))))
+            (spawn 'day23 'obj-hashtable (list
+                (maps:from_list (lists:append
+                    (list
+                        (lists:map
+                            (lambda (term)
+                                (tuple term
+                                    (let ((searcher
+                                        (spawn 'day23 'all-paths-from (list
+                                            simple-network
+                                            (list term)
+                                            0
+                                            (lists:delete term terminals)))))
+                                        (! searcher (tuple 'query (self)))
+                                        (receive
+                                            ((tuple 'response x) x)))))
+                            terminals)
+                        (list
+                            (tuple 'start (maps:get 'start simple-ht))
+                            (tuple 'end   (maps:get 'end   simple-ht))))))))))
+
 (defun all-paths-from (network path cost terminals)
     (if (lists:member (car path) terminals)
-        (reply (list (tuple cost (car path))))
+        (reply (list (cons (car path) cost)))
     ; else
         (progn
             (! network (tuple 'get (car path) (self)))
@@ -101,7 +144,7 @@
                 ((tuple 'response adj-pairs)
                     (let ((children
                         (lists:filtermap
-                            (lambda (pair)
+                            (lambda (pair) ; pair is (coord . cost)
                                 (if (lists:member (car pair) path)
                                     'false
                                 ; else
@@ -132,9 +175,9 @@
         "13,5" (list (cons "13,13" 12) (cons "19,13" 38))
         "13,13" (list (cons "11,21" 18) (cons "19,13" 10))
         "19,13" (list (cons "19,19" 10))
-        "19,19" (list (cons "22,21" 5)))
+        "19,19" (list (cons "22,21" 5))
         'start "0,1"
-        'end "22,21"))
+        'end "22,21")))
 
 (defun longest-path (network)
     (! network (tuple 'get 'start (self)))
@@ -143,26 +186,21 @@
         (let ((end (receive ((tuple 'response x) x))))
             (let ((solver (spawn 'day23 'all-paths-from
                     (list network (list start) 0 (list end)))))
-                (progn
-                    (! solver (tuple 'query (self)))
-                    (receive
-                        ((tuple 'response cost-dests)
-                            (lists:foldr
-                                (lambda (cost-dest best)
-                                    (let (((tuple cost _) cost-dest))
-                                        (max cost best)))
-                                0
-                                cost-dests))))))))
+                (! solver (tuple 'query (self)))
+                (receive
+                    ((tuple 'response cost-dests)
+                        (lists:foldr
+                            (lambda (dest-cost best)
+                                (max (cdr dest-cost) best))
+                            0
+                            cost-dests)))))))
 
 (defun main ()
-    ; TODO (simple->weighted simple-network) function
-    ;       that takes a simple network and uses all-paths-from
-    ;       to compress it to a much smaller weighted graph
-    ; TODO Replace hard-coded 'setup-network with
-    ;       (simple->weighted (input->simple input-data 'true))
-    ;       and
-    ;       (simple->weighted (input->simple input-data 'false))
-    ;       for parts 1 and 2 respectively
-    (let ((network-1 (input->simple (file->string "input23.txt") 'false)))
-        (io:format "~p~n" (list (longest-path network-1)))
-        (! network-1 'finish)))
+    (let* ((input-text (file->string "input23.test"))
+           (network-1 (input->weighted input-text 'false))
+           (network-2 (input->weighted input-text 'true)))
+        (io:format "~p~n~p~n" (list
+            (longest-path network-1)
+            (longest-path network-2)))
+        (! network-1 'finish)
+        (! network-2 'finish)))
