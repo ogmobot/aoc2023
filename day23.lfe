@@ -1,21 +1,14 @@
 (defmodule day23
     (export
-        (obj-hashtable 1)
+        (echo 0)
         (reply 1)
         (main 0)
         (main 1)))
 
-(defun obj-hashtable (ht)
-    (receive
-        ((tuple 'set key value)
-            (obj-hashtable (maps:put key value ht)))
-        ((tuple 'get key who)
-            (! who (tuple 'response (maps:get key ht)))
-            (obj-hashtable ht))
-        ((tuple 'get-all who)
-            (! who (tuple 'response ht))
-            (obj-hashtable ht))
-        ('finish 'ok)))
+(defun echo ()
+    (let ((answer (receive (value value))))
+        (receive
+            (who (! who answer)))))
 
 (defun reply (value)
     (receive
@@ -33,8 +26,6 @@
     ;; Where text is a long, grid-like string
     (let* ((nth-char (lambda (n) (string:slice text n 1)))
            (width (- (length text) (length (string:find text "\n"))))
-           (result (spawn 'day23 'obj-hashtable (list #M())))
-           (validp (lambda (n) (andalso (>= n 0) (< n (length text)))))
            (adj (lambda (dir i)
                 (cond
                     ((== dir 'up)    (- i (+ 1 width)))
@@ -48,34 +39,28 @@
                         (cond
                             ((== glyph "#") '())
                             ((andalso (== glyph "^") (not ignoreslopesp))
-                                (list (funcall adj 'up index)))
+                                (list (cons (funcall adj 'up index) 1)))
                             ((andalso (== glyph "v") (not ignoreslopesp))
-                                (list (funcall adj 'down index)))
+                                (list (cons (funcall adj 'down index) 1)))
                             ((andalso (== glyph "<") (not ignoreslopesp))
-                                (list (funcall adj 'left index)))
+                                (list (cons (funcall adj 'left index) 1)))
                             ((andalso (== glyph ">") (not ignoreslopesp))
-                                (list (funcall adj 'right index)))
+                                (list (cons (funcall adj 'right index) 1)))
                             ('true
                                 (lists:filtermap
                                     (lambda (dir)
                                         (let ((i (funcall adj dir index)))
                                             (if (andalso
-                                                (funcall validp i)
+                                                (>= i 0)
+                                                (< i (length text))
                                                 (!= (funcall nth-char i) "#"))
-                                                (tuple 'true i)
+                                                (tuple 'true (cons i 1))
                                             ; else
                                                 'false)))
-                                    '(up down left right))))))))
-        (progn
-            (lists:foreach
-                ;; Could probably turn this into a maps:fromlist somehow,
-                ;; and then just spawn obj-hashtable with the map as arg
-                (lambda (pair)
-                    (! result (tuple 'set
-                        (car pair)
-                        (lists:map
-                            (lambda (dest) (cons dest 1))
-                            (cdr pair)))))
+                                    '(up down left right)))))))
+           (remember-start (spawn 'day23 'echo '()))
+           (remember-end   (spawn 'day23 'echo '()))
+           (terrain-tuple-list
                 (lists:filtermap
                     (lambda (i)
                         (let ((moves (funcall possible-moves i)))
@@ -85,94 +70,85 @@
                                 (progn
                                     (cond
                                         ((< i width)
-                                            (! result (tuple 'set 'start i)))
+                                            (! remember-start i))
                                         ((> i (- (length text) width))
-                                            (! result (tuple 'set 'end i))))
-                                    (tuple 'true (cons i moves))))))
+                                            (! remember-end i)))
+                                    (tuple 'true (tuple i moves))))))
                     (lists:seq 0 (- (length text) 1))))
-            result)))
+           (start-index (progn
+                (! remember-start (self))
+                (receive (value value))))
+           (end-index (progn
+                (! remember-end (self))
+                (receive (value value)))))
+            (maps:merge
+                (maps:from_list terrain-tuple-list)
+                `#M(start ,start-index end ,end-index))))
 
 (defun input->weighted (text ignoreslopesp)
-    (let* ((simple-network (input->simple text ignoreslopesp))
-           (simple-ht (progn
-                (! simple-network (tuple 'get-all (self)))
-                (receive ((tuple 'response ht) ht))))
-           (terminals (lists:append
-                (list
-                    (maps:keys
+    (let* ((simple-ht (input->simple text ignoreslopesp))
+           (start-index (maps:get 'start simple-ht))
+           (end-index   (maps:get 'end   simple-ht))
+           (terminals (cons start-index
+                      (cons end-index
+                      (maps:keys
                         (maps:filter
-                            (lambda (k v)
-                                (andalso
-                                    (is_list v)
-                                    (> (length v) 2)))
-                            simple-ht))
-                    (list
-                        (maps:get 'start simple-ht)
-                        (maps:get 'end   simple-ht))))))
-            (let ((result
-                    (spawn 'day23 'obj-hashtable (list
-                        (maps:from_list (lists:append
-                            (list
-                                (lists:map
-                                    (lambda (term)
-                                        (tuple term
-                                            (all-paths-from-rec
-                                                simple-network
-                                                (list term)
-                                                0
-                                                (lists:delete term terminals))))
-                                    terminals)
-                                (list
-                                    (tuple 'start (maps:get 'start simple-ht))
-                                    (tuple 'end   (maps:get 'end   simple-ht))))))))))
-                (! simple-network 'finish)
-                result)))
+                            (lambda (k v) (> (length v) 2))
+                            (maps:without '(start end) simple-ht)))))))
+            (maps:merge
+                (maps:from_list
+                    (lists:map
+                        (lambda (term)
+                            (tuple term
+                                (all-paths-from-rec
+                                    simple-ht
+                                    term
+                                    (lists:delete term terminals))))
+                        terminals))
+                `#M(start ,start-index end ,end-index))))
 
 (defun all-paths-from-rec (network path cost terminals)
     ; This doesn't spawn processes at an exponential rate
     (if (lists:member (car path) terminals)
         (list (cons (car path) cost))
     ;else
-        (progn
-            (! network (tuple 'get (car path) (self)))
-            (receive
-                ((tuple 'response adj-pairs)
-                    (lists:append
-                        (lists:filtermap
-                            (lambda (pair) ; pair is (coord . cost)
-                                (if (lists:member (car pair) path)
-                                    'false
-                                ; else
-                                    (tuple 'true
-                                        (all-paths-from-rec
-                                            network
-                                                (cons (car pair) path)
-                                                (+ cost (cdr pair))
-                                                terminals))))
-                                adj-pairs)))))))
+        (let ((adj-pairs (maps:get (car path) network)))
+            (lists:append
+                (lists:filtermap
+                    (lambda (pair) ; pair is (coord . cost)
+                        (if (lists:member (car pair) path)
+                            'false
+                        ; else
+                            (tuple 'true
+                                (all-paths-from-rec
+                                    network
+                                    (cons (car pair) path)
+                                    (+ cost (cdr pair))
+                                    terminals))))
+                        adj-pairs)))))
+
+(defun all-paths-from-rec (network start-node terminals)
+    (all-paths-from-rec network (list start-node) 0 terminals))
 
 (defun longest-path (network)
-    (! network (tuple 'get 'start (self)))
-    (let ((start (receive ((tuple 'response x) x))))
-        (! network (tuple 'get 'end (self)))
-        (let ((end (receive ((tuple 'response x) x))))
-            (let ((dest-costs
-                    (all-paths-from-rec network (list start) 0 (list end))))
-                (lists:foldr
-                    (lambda (dest-cost best)
-                        (max (cdr dest-cost) best))
-                    0
-                    dest-costs)))))
+    (let ((dest-costs
+            (all-paths-from-rec
+                network
+                (maps:get 'start network)
+                (list (maps:get 'end network)))))
+        (lists:foldr
+            (lambda (dest-cost best)
+                (max (cdr dest-cost) best))
+            0
+            dest-costs)))
 
-;; Takes ~4m
+;; Takes ~90s
 (defun main ()
     (let* ((input-text (file->string "input23.txt"))
            (network-1 (input->weighted input-text 'false))
            (network-2 (input->weighted input-text 'true)))
         (io:format "~p~n~p~n" (list
             (longest-path network-1)
-            (longest-path network-2)))
-        (! network-1 'finish)
-        (! network-2 'finish)))
+            (longest-path network-2)))))
 
 (defun main (_) (main))
