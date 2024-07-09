@@ -2,8 +2,6 @@
     (export
         (obj-hashtable 1)
         (reply 1)
-        (all-paths-from 4)
-        (all-paths-from-safe 4)
         (main 0)
         (main 1)))
 
@@ -118,15 +116,11 @@
                                 (lists:map
                                     (lambda (term)
                                         (tuple term
-                                            (let ((searcher
-                                                (spawn 'day23 'all-paths-from-safe (list
-                                                    simple-network
-                                                    (list term)
-                                                    0
-                                                    (lists:delete term terminals)))))
-                                                (! searcher (tuple 'query (self)))
-                                                (receive
-                                                    ((tuple 'response x) x)))))
+                                            (all-paths-from-rec
+                                                simple-network
+                                                (list term)
+                                                0
+                                                (lists:delete term terminals))))
                                     terminals)
                                 (list
                                     (tuple 'start (maps:get 'start simple-ht))
@@ -134,85 +128,43 @@
                 (! simple-network 'finish)
                 result)))
 
-(defun all-paths-from (network path cost terminals)
+(defun all-paths-from-rec (network path cost terminals)
+    ; This doesn't spawn processes at an exponential rate
     (if (lists:member (car path) terminals)
-        (reply (list (cons (car path) cost)))
-    ; else
+        (list (cons (car path) cost))
+    ;else
         (progn
             (! network (tuple 'get (car path) (self)))
             (receive
                 ((tuple 'response adj-pairs)
-                    (let ((children
+                    (lists:append
                         (lists:filtermap
                             (lambda (pair) ; pair is (coord . cost)
                                 (if (lists:member (car pair) path)
                                     'false
                                 ; else
                                     (tuple 'true
-                                        (spawn 'day23 'all-paths-from
-                                            (list
-                                                network
+                                        (all-paths-from-rec
+                                            network
                                                 (cons (car pair) path)
                                                 (+ cost (cdr pair))
-                                                terminals)))))
-                            adj-pairs)))
-                        (reply
-                            (lists:append
-                                (lists:map
-                                    (lambda (child)
-                                        (! child (tuple 'query (self)))
-                                        (receive ((tuple 'response result) result)))
-                                    children)))))))))
-
-(defun all-paths-from-safe (network path cost terminals)
-    ; This doesn't spawn processes at an exponential rate
-    (if (lists:member (car path) terminals)
-        (reply (list (cons (car path) cost)))
-    ;else
-        (progn
-            (! network (tuple 'get (car path) (self)))
-            (receive
-                ((tuple 'response adj-pairs)
-                    (reply
-                        (lists:append
-                            (lists:filtermap
-                                (lambda (pair) ; pair is (coord . cost)
-                                    (if (lists:member (car pair) path)
-                                        'false
-                                    ; else
-                                        (tuple 'true
-                                            (let ((child
-                                                    (spawn
-                                                        'day23
-                                                        'all-paths-from-safe
-                                                        (list
-                                                            network
-                                                            (cons (car pair) path)
-                                                            (+ cost (cdr pair))
-                                                            terminals))))
-                                            (! child (tuple 'query (self)))
-                                            (receive
-                                                ((tuple 'response result)
-                                                    result))))))
-                                adj-pairs))))))))
+                                                terminals))))
+                                adj-pairs)))))))
 
 (defun longest-path (network)
     (! network (tuple 'get 'start (self)))
     (let ((start (receive ((tuple 'response x) x))))
         (! network (tuple 'get 'end (self)))
         (let ((end (receive ((tuple 'response x) x))))
-            (let ((solver (spawn 'day23 'all-paths-from-safe
-                    (list network (list start) 0 (list end)))))
-                (! solver (tuple 'query (self)))
-                (receive
-                    ((tuple 'response dest-costs)
-                        (lists:foldr
-                            (lambda (dest-cost best)
-                                (max (cdr dest-cost) best))
-                            0
-                            dest-costs)))))))
+            (let ((dest-costs
+                    (all-paths-from-rec network (list start) 0 (list end))))
+                (lists:foldr
+                    (lambda (dest-cost best)
+                        (max (cdr dest-cost) best))
+                    0
+                    dest-costs)))))
 
-;; Takes ~10m
+;; Takes ~4m
 (defun main ()
     (let* ((input-text (file->string "input23.txt"))
            (network-1 (input->weighted input-text 'false))
