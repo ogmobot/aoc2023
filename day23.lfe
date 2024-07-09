@@ -2,13 +2,15 @@
     (export
         (echo 0)
         (reply 1)
+        (solve 2)
         (main 0)
         (main 1)))
 
 (defun echo ()
     (let ((answer (receive (value value))))
         (receive
-            (who (! who answer)))))
+            ((tuple 'query who)
+                (! who (tuple 'response answer))))))
 
 (defun reply (value)
     (receive
@@ -76,11 +78,11 @@
                                     (tuple 'true (tuple i moves))))))
                     (lists:seq 0 (- (length text) 1))))
            (start-index (progn
-                (! remember-start (self))
-                (receive (value value))))
+                (! remember-start (tuple 'query (self)))
+                (receive ((tuple 'response value) value))))
            (end-index (progn
-                (! remember-end (self))
-                (receive (value value)))))
+                (! remember-end (tuple 'query (self)))
+                (receive ((tuple 'response value) value)))))
             (maps:merge
                 (maps:from_list terrain-tuple-list)
                 `#M(start ,start-index end ,end-index))))
@@ -142,13 +144,18 @@
             0
             dest-costs)))
 
-;; Takes ~90s
+(defun solve (input-text ignoreslopesp)
+    (let ((network (input->weighted input-text ignoreslopesp)))
+        (reply (longest-path network))))
+
+;; Takes ~60s
 (defun main ()
     (let* ((input-text (file->string "input23.txt"))
-           (network-1 (input->weighted input-text 'false))
-           (network-2 (input->weighted input-text 'true)))
-        (io:format "~p~n~p~n" (list
-            (longest-path network-1)
-            (longest-path network-2)))))
+           (part-1 (spawn 'day23 'solve (list input-text 'false)))
+           (part-2 (spawn 'day23 'solve (list input-text 'true))))
+        (! part-1 (tuple 'query (self)))
+        (receive ((tuple 'response answer) (io:format "~p~n" (list answer))))
+        (! part-2 (tuple 'query (self)))
+        (receive ((tuple 'response answer) (io:format "~p~n" (list answer))))))
 
 (defun main (_) (main))
