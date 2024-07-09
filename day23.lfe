@@ -1,16 +1,9 @@
 (defmodule day23
     (export
-        (echo 0)
         (reply 1)
         (solve 2)
         (main 0)
         (main 1)))
-
-(defun echo ()
-    (let ((answer (receive (value value))))
-        (receive
-            ((tuple 'query who)
-                (! who (tuple 'response answer))))))
 
 (defun reply (value)
     (receive
@@ -24,68 +17,56 @@
             (file:close fp)
             (string:chomp data))))
 
-(defun input->simple (text ignoreslopesp)
-    ;; Where text is a long, grid-like string
-    (let* ((nth-char (lambda (n) (string:slice text n 1)))
-           (width (- (length text) (length (string:find text "\n"))))
-           (adj (lambda (dir i)
-                (cond
-                    ((== dir 'up)    (- i (+ 1 width)))
-                    ((== dir 'down)  (+ i (+ 1 width)))
-                    ((== dir 'left)  (- i 1))
-                    ((== dir 'right) (+ i 1))
-                    ('true i))))
-           (possible-moves
-                (lambda (index)
-                    (let ((glyph (funcall nth-char index)))
-                        (cond
-                            ((== glyph "#") '())
-                            ((andalso (== glyph "^") (not ignoreslopesp))
-                                (list (cons (funcall adj 'up index) 1)))
-                            ((andalso (== glyph "v") (not ignoreslopesp))
-                                (list (cons (funcall adj 'down index) 1)))
-                            ((andalso (== glyph "<") (not ignoreslopesp))
-                                (list (cons (funcall adj 'left index) 1)))
-                            ((andalso (== glyph ">") (not ignoreslopesp))
-                                (list (cons (funcall adj 'right index) 1)))
-                            ('true
-                                (lists:filtermap
-                                    (lambda (dir)
-                                        (let ((i (funcall adj dir index)))
-                                            (if (andalso
-                                                (>= i 0)
-                                                (< i (length text))
-                                                (!= (funcall nth-char i) "#"))
-                                                (tuple 'true (cons i 1))
-                                            ; else
-                                                'false)))
-                                    '(up down left right)))))))
-           (remember-start (spawn 'day23 'echo '()))
-           (remember-end   (spawn 'day23 'echo '()))
-           (terrain-tuple-list
-                (lists:filtermap
-                    (lambda (i)
-                        (let ((moves (funcall possible-moves i)))
-                            (if (== (length moves) 0)
-                                'false
-                            ; else
-                                (progn
-                                    (cond
-                                        ((< i width)
-                                            (! remember-start i))
-                                        ((> i (- (length text) width))
-                                            (! remember-end i)))
-                                    (tuple 'true (tuple i moves))))))
-                    (lists:seq 0 (- (length text) 1))))
-           (start-index (progn
-                (! remember-start (tuple 'query (self)))
-                (receive ((tuple 'response value) value))))
-           (end-index (progn
-                (! remember-end (tuple 'query (self)))
-                (receive ((tuple 'response value) value)))))
+(defun input->simple (text ignoreslopesp index width)
+    (if (>= index (length text))
+        #M()
+        (let ((current-char (string:slice text index 1))
+              (adj (lambda (dir i)
+                    (cond ((== dir 'up)    (- i (+ 1 width)))
+                          ((== dir 'down)  (+ i (+ 1 width)))
+                          ((== dir 'left)  (- i 1))
+                          ((== dir 'right) (+ i 1))
+                          ('true i)))))
             (maps:merge
-                (maps:from_list terrain-tuple-list)
-                `#M(start ,start-index end ,end-index))))
+                (cond
+                    ; wall tile or end-of-line?
+                    ((orelse (== current-char "#") (== current-char "\n"))
+                        #M())
+                    ; start tile?
+                    ((andalso (== current-char ".") (< index width))
+                        `#M(start ,index
+                            ,index (,(cons (funcall adj 'down index) 1))))
+                    ; end tile?
+                    ((andalso (== current-char ".")
+                              (> index (- (length text) width)))
+                        `#M(end ,index
+                            ,index (,(cons (funcall adj 'up index) 1))))
+                    ; arrow tile?
+                    ((andalso (== current-char "^") (not ignoreslopesp))
+                        `#M(,index (,(cons (funcall adj 'up index) 1))))
+                    ((andalso (== current-char "v") (not ignoreslopesp))
+                        `#M(,index (,(cons (funcall adj 'down index) 1))))
+                    ((andalso (== current-char "<") (not ignoreslopesp))
+                        `#M(,index (,(cons (funcall adj 'left index) 1))))
+                    ((andalso (== current-char ">") (not ignoreslopesp))
+                        `#M(,index (,(cons (funcall adj 'right index) 1))))
+                    ; normal tile within the maze's border
+                    ('true
+                        `#M(,index
+                            ,(lists:filtermap
+                                (lambda (dir)
+                                   ; No bounds check needed due to border
+                                    (let* ((i (funcall adj dir index))
+                                           (nbr (string:slice text i 1)))
+                                        (if (!= nbr "#")
+                                            (tuple 'true (cons i 1))
+                                            'false)))
+                                '(up down left right)))))
+                (input->simple text ignoreslopesp (+ index 1) width)))))
+
+(defun input->simple (text ignoreslopesp)
+    (let ((width (- (length text) (length (string:find text "\n")))))
+        (input->simple text ignoreslopesp 0 width)))
 
 (defun input->weighted (text ignoreslopesp)
     (let* ((simple-ht (input->simple text ignoreslopesp))
