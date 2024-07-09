@@ -17,7 +17,7 @@
             (file:close fp)
             (string:chomp data))))
 
-(defun input->simple (text ignoreslopesp index width)
+(defun input->simple (text slipperyp index width)
     (if (>= index (length text))
         #M()
         (let ((current-char (string:slice text index 1))
@@ -42,13 +42,13 @@
                         `#M(end ,index
                             ,index (,(cons (funcall adj 'up index) 1))))
                     ; arrow tile?
-                    ((andalso (== current-char "^") (not ignoreslopesp))
+                    ((andalso slipperyp (== current-char "^"))
                         `#M(,index (,(cons (funcall adj 'up index) 1))))
-                    ((andalso (== current-char "v") (not ignoreslopesp))
+                    ((andalso slipperyp (== current-char "v"))
                         `#M(,index (,(cons (funcall adj 'down index) 1))))
-                    ((andalso (== current-char "<") (not ignoreslopesp))
+                    ((andalso slipperyp (== current-char "<"))
                         `#M(,index (,(cons (funcall adj 'left index) 1))))
-                    ((andalso (== current-char ">") (not ignoreslopesp))
+                    ((andalso slipperyp (== current-char ">"))
                         `#M(,index (,(cons (funcall adj 'right index) 1))))
                     ; normal tile within the maze's border
                     ('true
@@ -62,14 +62,14 @@
                                             (tuple 'true (cons i 1))
                                             'false)))
                                 '(up down left right)))))
-                (input->simple text ignoreslopesp (+ index 1) width)))))
+                (input->simple text slipperyp (+ index 1) width)))))
 
-(defun input->simple (text ignoreslopesp)
+(defun input->simple (text slipperyp)
     (let ((width (- (length text) (length (string:find text "\n")))))
-        (input->simple text ignoreslopesp 0 width)))
+        (input->simple text slipperyp 0 width)))
 
-(defun input->weighted (text ignoreslopesp)
-    (let* ((simple-ht (input->simple text ignoreslopesp))
+(defun input->weighted (text slipperyp)
+    (let* ((simple-ht (input->simple text slipperyp))
            (start-index (maps:get 'start simple-ht))
            (end-index   (maps:get 'end   simple-ht))
            (terminals (cons start-index
@@ -125,15 +125,15 @@
             0
             dest-costs)))
 
-(defun solve (input-text ignoreslopesp)
-    (let ((network (input->weighted input-text ignoreslopesp)))
+(defun solve (input-text slipperyp)
+    (let ((network (input->weighted input-text slipperyp)))
         (reply (longest-path network))))
 
 ;; Takes ~60s
 (defun main ()
     (let* ((input-text (file->string "input23.txt"))
-           (part-1 (spawn 'day23 'solve (list input-text 'false)))
-           (part-2 (spawn 'day23 'solve (list input-text 'true))))
+           (part-1 (spawn 'day23 'solve (list input-text 'true)))
+           (part-2 (spawn 'day23 'solve (list input-text 'false))))
         (! part-1 (tuple 'query (self)))
         (receive ((tuple 'response answer) (io:format "~p~n" (list answer))))
         (! part-2 (tuple 'query (self)))
