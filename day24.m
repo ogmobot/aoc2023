@@ -1,18 +1,14 @@
-1; % Starting a file with a non-function statement indicates it's not a library
-
+% These must be declared before functions!
+% Starting a file with a non-function statement indicates it's not a library.
 global LOWERBOUND = 200000000000000;
 global UPPERBOUND = 400000000000000;
 
 function [plist, vlist] = parseFile(filename)
     fp = fopen(filename);
-    res = textscan (fp, "%n, %n, %n @ %n, %n, %n");
+    res = textscan (fp, "%d64, %d64, %d64 @ %d64, %d64, %d64");
     fclose(fp);
     plist = {};
     vlist = {};
-    %for i = 1:length(res)
-        %plist{i} = [res{1}, res{2}, res{3}](1, :);
-        %vlist{i} = [res{4}, res{5}, res{6}](1, :);
-    %endfor
     plist = [res{1}, res{2}, res{3}];
     vlist = [res{4}, res{5}, res{6}];
 endfunction
@@ -118,6 +114,32 @@ function retval = resultTriple (p1, p2, v1, v2)
     retval = (cross(p1, v1) - cross(p2, v2))';
 endfunction
 
+function retval = isSolution (guess, p1, p2, p3, v1, v2, v3)
+    retval = (
+        cross(p1 - guess(1:3), v1 - guess(4:6)) == [0 0 0]
+     && cross(p2 - guess(1:3), v2 - guess(4:6)) == [0 0 0]
+     && cross(p3 - guess(1:3), v3 - guess(4:6)) == [0 0 0]
+    );
+endfunction
+
+function retval = refineApprox (approx, p1, p2, p3, v1, v2, v3)
+    % Assume Vx, Vy, Vz small enough that they will be precisely correct
+    IMPRECISION = int64(16);
+    Px = int64(approx(1)); Py = int64(approx(2)); Pz = int64(approx(3));
+    Vx = int64(approx(4)); Vy = int64(approx(5)); Vz = int64(approx(6));
+    for dx = (-IMPRECISION):IMPRECISION
+        for dy = (-IMPRECISION):IMPRECISION
+            for dz = (-IMPRECISION):IMPRECISION
+                retval = [Px + dx, Py + dy, Pz + dz, Vx, Vy, Vz];
+                if isSolution (retval, p1, p2, p3, v1, v2, v3)
+                    return;
+                endif
+            endfor
+        endfor
+    endfor
+    retval = [Inf Inf Inf Inf Inf Inf];
+endfunction
+
 function retval = solvePart2 (plist, vlist)
     % Only need 3 rows to solve this
     p1 = plist(1, :); p2 = plist(2, :); p3 = plist(3, :);
@@ -129,36 +151,18 @@ function retval = solvePart2 (plist, vlist)
     b1 = resultTriple(p1, p2, v1, v2);
     b2 = resultTriple(p1, p3, v1, v3);
     B = vertcat (b1, b2);
-    retval = A\B; % Returns column vector x when Ax = B
+    % Solving matrices is only supported for doubles...
+    approx = double(A) \ double(B); % Returns column vector x when Ax = B
+    % ... but this introduces inaccuracies due to floating-point imprecision.
+    retval = refineApprox (approx, p1, p2, p3, v1, v2, v3);
 endfunction
 
 function main ()
-    plist = [
-        19 13 30;
-        18 19 22;
-        20 25 34;
-        12 31 28;
-        20 19 15
-    ];
-    vlist = [
-        -2  1 -2;
-        -1 -1 -2;
-        -2 -2 -4;
-        -1 -2 -1;
-         1 -5 -3
-    ];
     [plist, vlist] = parseFile ("input24.txt");
-    part1 = solvePart1 (plist, vlist);
+    part1 = solvePart1 (double(plist), double(vlist));
     disp (part1);
-    part2 = int64 (solvePart2 (plist, vlist))
+    part2 = solvePart2 (plist, vlist);
     disp (part2(1) + part2(2) + part2(3));
 endfunction
-
-% 387...002 but we get ...006 (+4)
-% 371...742 but we get ...747 (+5)
-% 171...512 but we get ...508 (-4)
-% -220      and we get -220
-% -167      and we get -167
-%  214      and we get  214
 
 main ();
