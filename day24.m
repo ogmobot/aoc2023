@@ -1,5 +1,55 @@
 1; % Starting a file with a non-function statement indicates it's not a library
 
+%global LOWERBOUND = 200000000000000;
+%global UPPERBOUND = 400000000000000;
+global LOWERBOUND = 7;
+global UPPERBOUND = 27;
+
+function retval = intersectLines (L1, L2)
+    % Where each L is [x0 y0 dx dy]
+    px = L1(1); py = L1(2); ux = L1(3); uy = L1(4);
+    qx = L2(1); qy = L2(2); vx = L2(3); vy = L2(4);
+    if (ux * vy == vx * uy)
+        retval = [Inf Inf];
+    else
+        retval = [
+            ((((ux * vy * qx) - (vx * uy * px)) - (vx * ux * (qy - py)))
+            /((ux * vy) - (vx * uy)))
+        ,
+            ((((uy * vx * qy) - (vy * ux * py)) - (vy * uy * (qx - px)))
+            /((uy * vx) - (vy * ux)))
+        ];
+    endif
+endfunction
+
+function retval = solvePart1 (plist, vlist)
+    global LOWERBOUND
+    global UPPERBOUND
+    retval = 0;
+    for i = 1:length (plist)
+        for j = i + 1:length (plist)
+            p1 = plist{i};
+            v1 = vlist{i};
+            p2 = plist{j};
+            v2 = vlist{j};
+            I = intersectLines(
+                % Part 1 deals with x and y values only
+                [p1(1) p1(2) v1(1) v1(2)],
+                [p2(1) p2(2) v2(1) v2(2)]
+            );
+            if (LOWERBOUND <= I(1) && I(1) <= UPPERBOUND)
+                if (LOWERBOUND <= I(2) && I(2) <= UPPERBOUND)
+                    if ((I(1) - p1(1))/v1(1) >= 0) % time can't be < 0
+                        if ((I(1) - p2(1))/v2(1) >= 0)
+                            retval += 1;
+                        endif
+                    endif
+                endif
+            endif
+        endfor
+    endfor
+endfunction
+
 % Let P be our rock's starting position, and V be its starting velocity.
 % Our input data are hailstones p1, v1; p2, v2; p3, v3; ..., pn, vn
 % and we know that there exists some t1, t2, t3, ..., tn such that
@@ -32,14 +82,14 @@
 % the problem.
 
 
-function retval = matrix_triple_row (p1, p2, v1, v2)
+function retval = matrixTripleRow (p1, p2, v1, v2)
     % Computes three rows of the matrix A
     % (Where Ax = B)
     dv = v1 - v2;
     dp = p1 - p2;
     % This matrix comes from the x, y and z components of
     % (P x dv) + (dp x V)
-    % (so (our result) . (PV) == (P x dv) + (dp x V))
+    % (so (our result)(P|V) == (P x dv) + (dp x V))
     retval = [
         % x component
            0    dv(3)      -dv(2)      0   -dp(3)   dp(2);
@@ -50,35 +100,45 @@ function retval = matrix_triple_row (p1, p2, v1, v2)
     ];
 endfunction
 
-function retval = result_triple (p1, p2, v1, v2)
+function retval = resultTriple (p1, p2, v1, v2)
     % Computes three entries of the column vector B
     % (Where Ax = B)
     retval = (cross(p1, v1) - cross(p2, v2))';
 endfunction
 
-function retval = solve_p2 (plist, vlist)
-    a1 = matrix_triple_row(plist{1}, plist{2}, vlist{1}, vlist{2});
-    a2 = matrix_triple_row(plist{1}, plist{3}, vlist{1}, vlist{3});
+function retval = solvePart2 (plist, vlist)
+    % Only need 3 rows to solve this
+    p1 = plist{1}; p2 = plist{2}; p3 = plist{3};
+    v1 = vlist{1}; v2 = vlist{2}; v3 = vlist{3};
+
+    a1 = matrixTripleRow(p1, p2, v1, v2);
+    a2 = matrixTripleRow(p1, p3, v1, v3);
     A = vertcat (a1, a2);
-    b1 = result_triple(plist{1}, plist{2}, vlist{1}, vlist{2});
-    b2 = result_triple(plist{1}, plist{3}, vlist{1}, vlist{3});
+    b1 = resultTriple(p1, p2, v1, v2);
+    b2 = resultTriple(p1, p3, v1, v3);
     B = vertcat (b1, b2);
-    retval = A\B;
+    retval = A\B; % Returns column vector x when Ax = B
 endfunction
 
 function main ()
     plist = {
         [19 13 30],
         [18 19 22],
-        [20 25 34]
+        [20 25 34],
+        [12 31 28],
+        [20 19 15]
     };
     vlist = {
         [-2  1 -2],
         [-1 -1 -2],
-        [-2 -2 -4]
+        [-2 -2 -4],
+        [-1 -2 -1],
+        [ 1 -5 -3]
     };
-    p2 = round (solve_p2 (plist, vlist))
-    disp (round (p2(1) + p2(2) + p2(3)))
+    part1 = solvePart1 (plist, vlist);
+    disp (part1);
+    part2 = round (solvePart2 (plist, vlist));
+    disp (round (part2(1) + part2(2) + part2(3)));
 endfunction
 
 main ();
