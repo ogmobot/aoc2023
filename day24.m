@@ -1,9 +1,21 @@
 1; % Starting a file with a non-function statement indicates it's not a library
 
-%global LOWERBOUND = 200000000000000;
-%global UPPERBOUND = 400000000000000;
-global LOWERBOUND = 7;
-global UPPERBOUND = 27;
+global LOWERBOUND = 200000000000000;
+global UPPERBOUND = 400000000000000;
+
+function [plist, vlist] = parseFile(filename)
+    fp = fopen(filename);
+    res = textscan (fp, "%n, %n, %n @ %n, %n, %n");
+    fclose(fp);
+    plist = {};
+    vlist = {};
+    %for i = 1:length(res)
+        %plist{i} = [res{1}, res{2}, res{3}](1, :);
+        %vlist{i} = [res{4}, res{5}, res{6}](1, :);
+    %endfor
+    plist = [res{1}, res{2}, res{3}];
+    vlist = [res{4}, res{5}, res{6}];
+endfunction
 
 function retval = intersectLines (L1, L2)
     % Where each L is [x0 y0 dx dy]
@@ -23,15 +35,15 @@ function retval = intersectLines (L1, L2)
 endfunction
 
 function retval = solvePart1 (plist, vlist)
-    global LOWERBOUND
-    global UPPERBOUND
+    global LOWERBOUND;
+    global UPPERBOUND;
     retval = 0;
     for i = 1:length (plist)
+        p1 = plist(i, :);
+        v1 = vlist(i, :);
         for j = i + 1:length (plist)
-            p1 = plist{i};
-            v1 = vlist{i};
-            p2 = plist{j};
-            v2 = vlist{j};
+            p2 = plist(j, :);
+            v2 = vlist(j, :);
             I = intersectLines(
                 % Part 1 deals with x and y values only
                 [p1(1) p1(2) v1(1) v1(2)],
@@ -108,8 +120,8 @@ endfunction
 
 function retval = solvePart2 (plist, vlist)
     % Only need 3 rows to solve this
-    p1 = plist{1}; p2 = plist{2}; p3 = plist{3};
-    v1 = vlist{1}; v2 = vlist{2}; v3 = vlist{3};
+    p1 = plist(1, :); p2 = plist(2, :); p3 = plist(3, :);
+    v1 = vlist(1, :); v2 = vlist(2, :); v3 = vlist(3, :);
 
     a1 = matrixTripleRow(p1, p2, v1, v2);
     a2 = matrixTripleRow(p1, p3, v1, v3);
@@ -121,24 +133,32 @@ function retval = solvePart2 (plist, vlist)
 endfunction
 
 function main ()
-    plist = {
-        [19 13 30],
-        [18 19 22],
-        [20 25 34],
-        [12 31 28],
-        [20 19 15]
-    };
-    vlist = {
-        [-2  1 -2],
-        [-1 -1 -2],
-        [-2 -2 -4],
-        [-1 -2 -1],
-        [ 1 -5 -3]
-    };
+    plist = [
+        19 13 30;
+        18 19 22;
+        20 25 34;
+        12 31 28;
+        20 19 15
+    ];
+    vlist = [
+        -2  1 -2;
+        -1 -1 -2;
+        -2 -2 -4;
+        -1 -2 -1;
+         1 -5 -3
+    ];
+    [plist, vlist] = parseFile ("input24.txt");
     part1 = solvePart1 (plist, vlist);
     disp (part1);
-    part2 = round (solvePart2 (plist, vlist));
-    disp (round (part2(1) + part2(2) + part2(3)));
+    part2 = int64 (solvePart2 (plist, vlist))
+    disp (part2(1) + part2(2) + part2(3));
 endfunction
+
+% 387...002 but we get ...006 (+4)
+% 371...742 but we get ...747 (+5)
+% 171...512 but we get ...508 (-4)
+% -220      and we get -220
+% -167      and we get -167
+%  214      and we get  214
 
 main ();
