@@ -15,7 +15,7 @@ define : uniq xs
     cond
         {(length xs) < 2}
             . xs
-        : = (car xs) (cadr xs)
+        {(car xs) = (cadr xs)}
             uniq (cdr xs)
         else
             cons (car xs) (uniq (cdr xs))
