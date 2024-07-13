@@ -53,7 +53,7 @@ function stoi_p1(text:string) : int {
     var acc = 0
     while index < len(text) {
         acc = acc * 10
-        acc = acc + (text[index] - 48)
+        acc = acc + (text[index] - '0')
         index = index + 1
     }
     return acc
@@ -69,7 +69,7 @@ function ctoi_p2(text:string) : int {
         if text[index] >= 'a' {
             acc = acc + (text[index] - 'a' + 10)
         } else {
-            acc = acc + (text[index] - 48)
+            acc = acc + (text[index] - '0')
         }
         index = index + 1
     }
@@ -95,7 +95,7 @@ function decode_p2(line:string) : linedata {
     var words = split_string(line, ' ')
     var colour = words[2]
     res.amount = ctoi_p2(colour)
-    res.direction = colour[7] - 48 // lol
+    res.direction = colour[7] - '0' // lol
     return res
 }
 
