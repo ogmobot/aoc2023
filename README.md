@@ -283,7 +283,7 @@ Erlang is great at handling concurrent tasks, but I don't think the syntax of Li
 
 I've written many solutions now in Scheme-like (Lisp-1) languages, but LFE is a Lisp-2 language and has different syntax for referring to functions. The only other Lisp-2 I'm very familiar with is Common Lisp, but LFE's syntax is different enough that I still found it tough to deal with.
 
-Finally, my original super-concurrent approach didn't work! The number of concurrent tasks blew past the default limit of 32768 and crashed the BEAM vm. My "safe" version spawns fewer tasks, but it's enough to slow the program's speed to a crawl. I'd like to speed up the program, either by setting up more parallel concurrent tasks, or by removing concurrency altogether. I'm not sure which, yet.
+Finally, my original super-concurrent approach didn't work! The number of concurrent tasks blew past the default limit of 32768 and made the BEAM vm sad. My current version uses only two processes, one for each part. There's a good chance I could speed things up further by setting up a queue of paths to explore, and spawning 4-8 processes to work through it concurrently, but I'm happy with this solution for now.
 
 Writing Hy in the 2021 challenge felt like writing Python, even though the syntax was lisp-like. LFE, on the other hand, feels a lot more lisp-y to me.
 
