@@ -297,25 +297,33 @@ Octave is GNU's answer to the better-known Matlab. It's a free and open-source v
 
 This puzzle was very tough. My Python solution was basically to throw the whole thing into the z3 equation solver and let it do the work. When coming back to this puzzle, I decided to try and solve it myself. I found myself very stuck until an internet search reminded me that _vector cross products distribute across vector addition_. This was the hint I needed to solve the puzzle:
 
-Let vectors $P$ and $V$ be the rock's initial position and velocity respectively. If the first hailstone has position and velocity  $p_{1}$ and $v_{1}$, and collides with the rock at time $t_{1}$, then:
+Let vectors $P$ and $V$ be the rock's initial position and velocity respectively. If the $k$th hailstone has position and velocity  $p_{k}$ and $v_{k}$, and collides with the rock at time $t_{k}$, then:
 
-$$p_{1} + v_{1}t_{1} = P + Vt_{1}$$
+$$p_{k} + v_{k}t_{k} = P + Vt_{k}$$
 
-$$(p_{1} - P) + (v_{1} - V)t_{1} = 0$$
+$$(p_{k} - P) + (v_{k} - V)t_{k} = 0$$
 
-This means that $(p_{1} - P)$ is a multiple of $(v_{1} - V)$ -- or in other words, the vectors are parallel to each other. (This makes sense, since from the rock's frame of reference, every hailstone's displacement vector must be parallel to that hailstone's velocity vector if it will collide with the rock.) The trick is then to find the cross product of the parallel vectors, and then _expand_ the cross product:
+This means that $(p_{k} - P)$ is a multiple of $(v_{k} - V)$ -- or in other words, the vectors are parallel to each other. (This makes sense, since from the rock's frame of reference, every hailstone's displacement vector must be parallel to that hailstone's velocity vector if it will collide with the rock.) The trick is then to find the cross product of the parallel vectors, and then _expand_ the cross product:
 
-$$0 = (p_{1} - P) \times (v_{1} - V)$$
+$$0 = (p_{k} - P) \times (v_{k} - V)$$
 
-$$0 = (p_{1} \times v_{1}) - (p_{1} \times V) - (P \times v_{1}) + (P \times V)$$
+$$0 = (p_{k} \times v_{k}) - (p_{k} \times V) - (P \times v_{k}) + (P \times V)$$
 
-That $(P \times V)$ term shows up in _every_ hailstone's cross-product-expansion, so it can be cancelled out if we take a pair of hailstone's positions and velocities. Equating $x$, $y$ and $z$ components of the resulting equation gives us a system of three linear equations, and each different pair of hailstones gives us three more. Since we only need to solve for six unknowns, two pairs of hailstones are sufficient. (I used 1-2 and 1-3.)
+That $(P \times V)$ term shows up in _every_ hailstone's cross-product-expansion, so it can be cancelled out if we take a pair of hailstone's positions and velocities.
+
+$$(p_{k} \times v_{k}) - (p_{k} \times V) - (P \times v_{k})
+    = (p_{k'} \times v_{k'}) - (p_{k'} \times V) - (P \times v_{k'})$$
+
+$$(p_{k} \times v_{k}) - (p_{k'} \times v_{k'})
+    = P \times (v_{k} - v_{k'}) + (p_{k} - p_{k'}) \times V$$
+
+Equating $x$, $y$ and $z$ components of the resulting equation gives us a system of three linear equations, and each different pair of hailstones gives us three more. Since we only need to solve for six unknowns, two pairs of hailstones are sufficient. (I used 1-2 and 1-3.)
 
 Once I'd finally figured out the maths, I figured I could use Octave to solve the system of equations (rather than writing a Gaussian elimination algorithm from scratch). Unfortunately, Octave's equation solver only operates on matrices of floating-point values, and the integers in this problem were large enough that not even double-precision could keep up. Rather than figure out how to make Octave deal with arbitrary precision, I brute-forced a small number of integer values near the approximate solution given by Octave.
 
 The language itself is a little annoying, but at least it's understandable. Staying true to its vision of being a free (and backwards-compatible) version of Matlab, it has ported over all of Matlab's quirks: 1-based indexing, printing the value of every statement not terminated by a semicolon, requiring scripts to start with a statement, indexing via `()`, etc.
 
-Matlab/Octave are great at dealing with matrices -- if you can twist your data into the shape of a matrix, it seems to be a good choice. In most other situations, though, I wouldn't recommend it.
+Matlab/Octave are great at dealing with matrices -- if you can twist your data into the shape of a matrix, they seem to be a good choice. In most other situations, though, I wouldn't recommend them.
 
 **Octave**: proof that trying to lock a programming language behind a paywall is doomed to fail.
 
