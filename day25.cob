@@ -10,20 +10,66 @@
       *    TO THE NUMBER OF EDGES, BUT DECREASES AS EDGES ARE REMOVED.
            01 TOTAL-WEIGHT PIC 9(4).
 
-      *    BEWARE - TABLES ARE 1-INDEXED!
-           01 EDGE-TABLE.
-               03 EDGE-RECORD OCCURS 9999 TIMES INDEXED BY EDGE-INDEX.
-                   05 FIRST-NODE PIC A(3).
-                   05 SECOND-NODE PIC A(3).
-                   05 EDGE-WEIGHT PIC 9(4).
+           01 RANDOM-NUMBER PIC V9(5).
+           01 RANDOM-OFFSET PIC S9(4).
 
+      *    BEWARE -- TABLES ARE 1-INDEXED!
+           01 EDGE-TABLE.
+             03 EDGE-RECORD OCCURS 9999 TIMES INDEXED BY EDGE-INDEX.
+               05 FIRST-NODE PIC A(3).
+               05 SECOND-NODE PIC A(3).
+               05 EDGE-WEIGHT PIC 9(4).
+               05 EDGE-ACTIVE PIC 9.
       *    FOR EXAMPLE, THE LINE "ABC: DEF GHI"
       *    CREATES THE EDGES {"ABC" "DEF" 0001} AND {"ABC" "GHI" 0001}.
 
+      *    KEEPS TRACK OF THE SIZE OF EACH CLUSTER OF NODES.
+           01 NODE-SIZES.
+             03 SIZE-RECORD OCCURS 9999 TIMES INDEXED BY SIZE-INDEX.
+               05 NODE-ID PIC A(3).
+               05 NODE-SIZE PIC 9(4).
 
        PROCEDURE DIVISION.
+           MOVE 1000 TO TOTAL-WEIGHT.
+      *    TODO GET DATA
+      *    TODO LOOP UNTIL MINIMAL 2-CUT (WEIGHT = 3) FOUND
+      *      TODO LOOP UNTIL ONLY ONE EDGE REMAINS
+      *        CHOOSE A RANDOM NUMBER BETWEEN 0 AND TOTAL-WEIGHT-1
+               COMPUTE RANDOM-NUMBER =
+                 FUNCTION RANDOM
+                 END-COMPUTE.
+               COMPUTE RANDOM-OFFSET =
+                 TOTAL-WEIGHT * RANDOM-NUMBER
+                 END-COMPUTE.
+               MOVE 0 TO EDGE-INDEX.
+      *        LOOP UNTIL THAT NUMBER IS NEGATIVE
+               PERFORM UNTIL RANDOM-OFFSET IS NOT GREATER THAN ZERO
+                 IF EDGE-ACTIVE (EDGE-INDEX) IS NOT ZERO THEN
+                   COMPUTE RANDOM-OFFSET =
+                     RANDOM-OFFSET - (EDGE-WEIGHT (EDGE-INDEX + 1))
+                     END-COMPUTE
+                 END-IF
+                 COMPUTE EDGE-INDEX =
+                   EDGE-INDEX + 1
+                   END-COMPUTE
+      *          TODO REMOVE THIS ONCE TABLE IS POPULATED!
+                 COMPUTE RANDOM-OFFSET =
+                   RANDOM-OFFSET - 100 END-COMPUTE
+                 DISPLAY RANDOM-OFFSET END-DISPLAY
+               END-PERFORM.
+      *        TODO MERGE THE NODES JOINED BY THIS EDGE:
+               MOVE ZERO TO EDGE-ACTIVE (EDGE-INDEX).
+               COMPUTE TOTAL-WEIGHT =
+                 TOTAL-WEIGHT - (EDGE-WEIGHT (EDGE-INDEX))
+                 END-COMPUTE.
+      *        TODO ADJUST NODE-SIZE.
+      *        TODO FIND EACH EDGE ATTACHED TO SECOND-NODE.
+      *          TODO POINT IT TO FIRST-NODE INSTEAD.
+      *          TODO IF THIS CREATES A DUPLICATE EDGE,
+      *          TODO DELETE ONE EDGE AND ADJUST THE OTHER'S WEIGHT.
            DISPLAY 'Hello, world!' END-DISPLAY.
            MOVE 1 TO EDGE-INDEX.
-           MOVE "ABCDEF0001" TO EDGE-RECORD (1).
-           DISPLAY EDGE-RECORD (EDGE-INDEX) END-DISPLAY.
+           MOVE "ABCDEF00010" TO EDGE-RECORD (1).
+           DISPLAY EDGE-RECORD (EDGE-INDEX)
+             END-DISPLAY.
            STOP RUN.
