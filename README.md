@@ -5,7 +5,6 @@ Another year... *another* 25 languages. Let's see how we go this time.
 Day 01: [Bash](https://www.gnu.org/software/bash/manual/bash.html) (and UNIX text utilities)
 --------------------------------------------------------------------------------------------
 I've been using shell scripts for years now. Knowing the basics of Bash has let me log debug output, hexdump malfunctioning assembly code, time my Advent of Code solutions, and so on. This is the first time I've actually combined shell utilities together to solve a puzzle. There's so much power in these tiny tools, and I've tapped only a fraction of it here. Perhaps I should try using them to solve problems more often.
-
 My Python solution approaches this problem with regular expressions and a dictionary of english digit names, but I've used a less clever solution here (replacing word names with their matching digits, but not interfering with overlapping words). This seems like a good fit for stream- and text-editing programs. (I also could have piped the whole thing into `awk`, or `python -c`; but that would defeat the purpose, wouldn't it?) I also learned about the `mktemp` program. Originally, I was trying to figure out how to `tee` standard output into two different commands, but this solution seemed cleaner.
 
 **Bash**: shell utilities are greater than the sum of their parts.
@@ -328,3 +327,23 @@ Matlab/Octave are great at dealing with matrices -- if you can twist your data i
 **Octave**: proof that trying to lock a programming language behind a paywall is doomed to fail.
 
 **Syntax Highlight**: `\` ("divides" a matrix by a column vector, so that `A\B` solves `Ax = B`)
+
+Day 25: [COBOL](https://gnucobol.sourceforge.io)
+------------------------------------------------
+What an unpleasant language. COBOL is the COmmon Business-Oriented Language from 1959. That makes it one of the oldest languages I've programmed in -- only FORTRAN and LISP could claim to be older. COBOL was developed with good intentions: the idea was to make it look like English, so that anyone could write programs in it. With over 60 years' worth of hindsight, it is clear the language went about this the wrong way. Calling a language "business-oriented" was as misguided then as it is today.
+
+Much of my frustration in using this language was due to how the language treats the columns in each line. Columns 1-6 are reserved (for line numbers), column 7 is used to indicate whether the line is a comment or a continuation of the last line, columns 8-11 can only be used by headings, and actual statements can only be written between columns 12-72. That's 61 characters of statement per line!
+
+So, what are the consequences of this? COBOL tends to be verbose, since it wants to look like English -- think `ADD 1 TO 2 GIVING X END-ADD` instead of `x = 1 + 2` -- so even simple arithmetic can take up multiple lines (especially when performing arithmetic on an element of an array). The tight squeeze encourages unreadably short variable names and no indentation. I resisted both of these "optimisations" in my solution. Uisng column 7 to indicate that a line is a comment makes it very difficult to tell at a glance whether a line is a comment, especially because comments also look like English. I'm sure at least some of these drawbacks were reasonable trade-offs when working with punch-cards, but they feel very hard to work with.
+
+Speaking of verbosity, the verbs that COBOL uses for arithmetic are _varied_. `ADD X TO Y`, `SUBTRACT A FROM B`, `MULTIPLY M BY N`, or simply `COMPUTE P = Q + R * S`. This is, in some sense, unsurprising; but it's very different from other languages to use different verbs for different operations. On the flip side, `PERFORM` is used to carry out many diffferent things: `for`-style loops, `while`-style loops (actually `UNTIL`-style), and to jump to subroutines. Why couldn't they have used different verbs for _these_ actions? (Don't forget to conclude each of these with `END-ADD`, `END-SUBTRACT`, etc.)
+
+Another annoyance with the language is the separation of variable declarations from code. This, I'm sure, was done to make the compiler's job easier (what a difficult task it must be to compile the actual statements!) but the lack of locality betwen variable definitions and where they're used makes it necessary for your head to be in two places at once when writing code.
+
+So, what _does_ the language have going for it? Hierarchical records (i.e. structs and arrays) are pretty neat, I guess. And string comparison is easier than in C, but that's a _very_ low bar. Not a language I'd recommend for anything serious. (Somehow, enormous amounts of digital infrastructure rely on programs written in COBOL. I pity the maintainers.)
+
+My approach for solving this problem was a probabilistic one. In principle, this means the program's run time could be as short as 30 seconds, depending on the puzzle input. In practice, my particular puzzle input and my particular (lack of) random seed means my program takes 21 attempts to solve the puzzle. I could have written a different algorithm, but I was having enough trouble with my rudimentary "vector" and "set" data structures that I didn't want to try anything tougher. My approach involved creating a set of edges, collapsing a randomly-chosen one to merge its two vertices, and redirecting or merging other edges to point at the new vertex. Hence, after initialisation, the number of edges can only decrease. My original approach was to flag "deleted" edges as inactive, but this resulted in my program being very slow. Modifying the solution so that "deleted" edges are replaced with the last item in the array, and then decrementing the array length, sped up the program by a factor of 3. I'm unlikely to try and optimise it further.
+
+**COBOL**: there's a reason people love to hate it.
+
+**Syntax Highlight**: `PERFORM` (the "everything" keyword -- does multiple kinds of loop, jumps to subroutines, etc.)
