@@ -60,11 +60,12 @@ for line in lines:
 wires = [
     tuple(sorted(pair)) for pair in wires
 ]
+# Takes ~15s per random_cut
 cut = random_cut(wires)
 attempts = 0
 while len(cut[1]) > 3:
-    print(f'{attempts=}')
-    print(f'{len(cut[1])=}')
+    #print(f'{attempts=}')
+    #print(f'{len(cut[1])=}')
     cut = random_cut(wires)
     attempts += 1
 
@@ -72,5 +73,5 @@ subgraphs = list(cut[0])
 soln = len(subgraphs[0]) * len(subgraphs[1])
 print(soln)
 
-with open("soln.txt", "w") as fp:
-    fp.write(f'{soln}')
+#with open("soln.txt", "w") as fp:
+    #fp.write(f'{soln}')
