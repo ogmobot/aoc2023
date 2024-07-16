@@ -347,3 +347,24 @@ My approach for solving this problem was a probabilistic one. In principle, this
 **COBOL**: there's a reason people love to hate it.
 
 **Syntax Highlight**: `PERFORM` (the "everything" keyword -- does multiple kinds of loop, jumps to subroutines, etc.)
+
+Conclusion
+==========
+Last time, it took me twelve months to get around to completing Advent of Code 2022 in 25 languages; this time, it only took me six. Since this is the third year of "each day's tasks in a different language", that brings us up, in theory, to 75 languages. Of course, reality is always more complicated than that. This year's Day 6 tasks were completed by hand; I've used a number of virtually indistinguishable Scheme dialects, like Guile, Femtolisp, Scheme 9 from Empty Space and Gambit; I've used pairs of languages that are so syntactically similar as to be virtually indistinguishable, like C++ and C, OCaml and Standard ML (and F#), Crystal and Ruby, TypeScript and JavaScript, Forth and UF, Haskell and Idris, Prolog and Mercury. Plus, I've solved all of this year's tasks in Python, too; and some previous years' tasks with Racket, Common Lisp and Lua.
+
+The 2023 challenge definitely felt tougher at times than 2021 or 2022. Having already used some of the most well-known languages back in 2021 (like Java, C++, Rust and TypeScript), the languages for 2022's tasks were a little more esoteric, and the effect in 2023 was even more pronounced. While this wasn't the first time I had used languages cobbled together by very small teams (or even singular developers), it feels like most of the (non-assembly) languages I used this time fell into that category.
+
+This languages this year were very old (COBOL, Pascal, Smalltalk), pretty new (Slouch, Kitten, Orion, UF, Sacalon), new syntax for older languages (CBLang, CoffeeScript, Wisp, Lisp Flavoured Erlang), "jailbroken" versions of proprietary languages (Kona, Octave), Scheme Dialects (S9FES, Gambit), assembly languages (MIPS, x86-64), university-developed languages (Mercury, Standard ML) or solid, tried-and-tested all-rounders (Bash, Ruby, Erlang, Dart, solving by hand!).
+
+My list of programming languages to try in the future grows ever longer.
+
+A few of my language picks from this year:
+* Favourite easily-portable language: Gambit Scheme
+* Favourite language for concurrency: Erlang
+* Favourite language for golfing: Slouch
+* Favourite passion project: UF
+* Most syntactically sweet: CoffeeScript
+* Most syntactically sour: COBOL
+* Most Correct: Mercury
+* Most bland: Dart
+* Favourite solving-method for bragging rights: solving by hand
