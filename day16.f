@@ -15,11 +15,10 @@
  128 constant D_v
 
 16384 constant MAX_FILE_SIZE
-( Together, these two buffers use up half of Varvara's available memory )
-create FILE_BUFFER MAX_FILE_SIZE allot
+( This buffer alone uses a quarter of Varvara's memory )
+create GRID MAX_FILE_SIZE allot
 variable FILE_SIZE
 0 FILE_SIZE !
-create GRID MAX_FILE_SIZE allot
 variable GRID_SIZE
 0 GRID_SIZE !
 ( Grid needs additional top/bottom rows for border, )
@@ -220,36 +219,43 @@ EXTENDED_STACK XTOP !
     then
 ;
 
-: find-grid-size ( -- )
-    FILE_BUFFER
+: find-grid-size ( *filename len -- )
+    ( read from filename, one byte at a time, until \n encountered )
+    filename
+    pad ( tempaddr )
+    0 x>
     begin
-        1 +
+        >x 1 + x>
+        dup 1 fileread drop ( assume read succeeds )
         dup c@ 10 =
     until
-    FILE_BUFFER - GRID_SIZE !
+    >x 1 - GRID_SIZE !
+    drop
 ;
 
-: file>grid ( filename -- )
-    ( Pads GRID with newlines, appends SENTINEL, )
+: file>grid ( *filename len -- )
+    ( Pads GRID with newlines, )
     ( then loads the contents of file into GRID, )
-    ( then translates each char in GRID to a 4-bit constant. )
-    filename
-    FILE_BUFFER MAX_FILE_SIZE fileread
-    FILE_SIZE !
-
-    find-grid-size
+    ( then translates each char in GRID to a 4-bit constant, )
+    ( then appends SENTINEL. )
+    over over find-grid-size
 
     MAX_FILE_SIZE 0 do
         S_newline GRID i + c!
     loop
-    ( copy map from FILE_BUFFER to GRID )
-    0 0 colrow>coord >x
+
+    ( no fileseek, but writing to filename device closes open file )
+    filename
+    grid-first MAX_FILE_SIZE fileread
+    FILE_SIZE !
+
+    grid-first
     FILE_SIZE @ 0 do
-        FILE_BUFFER i + c@ char>symb
-        x> dup >x i + c!
+        dup c@ char>symb over c!
+        1 +
     loop
-    x> drop
-    SENTINEL FILE_SIZE @ GRID_SIZE @ 2 * 2 + + c!
+    drop
+    SENTINEL grid-first FILE_SIZE @ + GRID_SIZE @ + c!
 ;
 
 : print-grid ( -- )
@@ -310,6 +316,6 @@ EXTENDED_STACK XTOP !
 " input16.txt" file>grid
 
 part-1 . cr
-part-2 . cr ( takes ~25s )
+part-2 . cr ( takes ~30s )
 
 bye
